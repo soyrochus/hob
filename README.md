@@ -8,6 +8,8 @@
 - JWT-based user authentication with protected endpoints.
 - Vector database integration for semantic search and context-driven Q&A.
 
+See: [Hob specifications](doc/hob-specification.md) but note that this is very much a draft aka in a preliminary stage
+
 **Quick Start:**
 1. Run the FastAPI server (e.g. `uvicorn app.main:app --reload` or the scripts in the bin/ directory).
 2. Register a user, log in to obtain a token.
