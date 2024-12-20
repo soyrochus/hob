@@ -9,7 +9,7 @@
 - Vector database integration for semantic search and context-driven Q&A.
 
 **Quick Start:**
-1. Run the FastAPI server (e.g. `uvicorn app.main:app --reload`).
+1. Run the FastAPI server (e.g. `uvicorn app.main:app --reload` or the scripts in the bin/ directory).
 2. Register a user, log in to obtain a token.
 3. Access protected endpoints with your JWT token.
 
