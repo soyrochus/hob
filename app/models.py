@@ -4,7 +4,22 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from sqlalchemy import Column, DateTime, String, Text
+from .db import Base
 
+# Database Models (Entities)
+
+
+class Bundle(Base):
+    __tablename__ = "bundles"
+
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+# Data Access Objects
 
 class BundleResponse(BaseModel):
     id: str

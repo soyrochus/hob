@@ -4,14 +4,19 @@
 import logging
 from datetime import datetime, timedelta
 from typing import List, Optional
-
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from jose import JWTError, jwt
-
-from .models import BundleResponse
 from pydantic import BaseModel, EmailStr
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+
+# Local imports
+from .db import Base, async_engine, get_db
+from .models import BundleResponse, Bundle
+
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -32,9 +37,33 @@ fake_users_db = {
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-app = FastAPI()
+
+# Lifespan context manager
+async def lifespan(app: FastAPI):
+    # Startup tasks (database initialization)
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    # Yield control to the application
+    yield
+
+    # Shutdown tasks (if any)
+    # You can add cleanup logic here
+    pass
+
+app = FastAPI(lifespan=lifespan)
+
 
 # CORS configuration
+# For a production environment, you should specify the allowed origins
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["https://your-frontend-domain.com"],
+#     allow_credentials=True,
+#     allow_methods=["GET", "POST"],
+#     allow_headers=["Authorization", "Content-Type"],
+# )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -131,20 +160,14 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 @app.get("/bundles", response_model=List[BundleResponse])
-async def list_bundles(current_user: dict = Depends(get_current_user)):
+async def list_bundles(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     logger.info("GET /bundles request")
     # Return mock data
-    return [
-        BundleResponse(
-            id="bundle-1",
-            name="Project Alpha",
-            description="Notes and files",
-            created_at=datetime.utcnow()
-        ),
-        BundleResponse(
-            id="bundle-2",
-            name="Meeting Notes",
-            description="Q4 Sales Meeting",
-            created_at=datetime.utcnow()
-        )
-    ]
+
+    bundles = await db.scalars(select(Bundle))
+    return [BundleResponse(id=b.id, name=b.name, description=b.description, created_at=b.created_at) for b in bundles]
+
+
+@app.get("/")
+async def root():
+    return {"message": "Hob is running"}
