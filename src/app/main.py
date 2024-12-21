@@ -1,4 +1,4 @@
-# Copyright © 2025, MIT License, Author: Iwan van der Kleijn 
+# Copyright © 2025, MIT License, Author: Iwan van der Kleijn
 # Hob: A private AI-augmented workspace for project notes and files.
 
 import logging
@@ -14,9 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 # Local imports
-from .db import Base, async_engine, get_db
-from .models import BundleResponse, Bundle
-
+from hob.db import Base, async_engine, get_db
+from hob.models import Bundle
+from .schemas import BundleResponse
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -31,7 +31,7 @@ fake_users_db = {
         "name": "John Doe",
         "email": "johndoe@example.com",
         "hashed_password": "fakehashedsecret",  # In reality, store hashed passwords
-        "age": 30
+        "age": 30,
     }
 }
 
@@ -50,6 +50,7 @@ async def lifespan(app: FastAPI):
     # Shutdown tasks (if any)
     # You can add cleanup logic here
     pass
+
 
 app = FastAPI(lifespan=lifespan)
 
@@ -105,7 +106,7 @@ def authenticate_user(email: str, password: str):
     if not user:
         return None
     # This is a demo. Normally you'd verify the password here.
-    if password != "secret": # A real system would hash and check
+    if password != "secret":  # A real system would hash and check
         return None
     return user
 
@@ -139,7 +140,7 @@ async def register_user(user: UserRegistration):
         "name": user.name,
         "email": user.email,
         "hashed_password": "fakehashed" + user.password,
-        "age": user.age
+        "age": user.age,
     }
     return {"status": "success"}
 
@@ -160,12 +161,19 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 @app.get("/bundles", response_model=List[BundleResponse])
-async def list_bundles(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_bundles(
+    current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
     logger.info("GET /bundles request")
     # Return mock data
 
     bundles = await db.scalars(select(Bundle))
-    return [BundleResponse(id=b.id, name=b.name, description=b.description, created_at=b.created_at) for b in bundles]
+    return [
+        BundleResponse(
+            id=b.id, name=b.name, description=b.description, created_at=b.created_at
+        )
+        for b in bundles
+    ]
 
 
 @app.get("/")

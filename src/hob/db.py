@@ -1,4 +1,4 @@
-# Copyright © 2025, MIT License, Author: Iwan van der Kleijn 
+# Copyright © 2025, MIT License, Author: Iwan van der Kleijn
 # Hob: A private AI-augmented workspace for project notes and files.
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -8,18 +8,16 @@ DATABASE_URL = "sqlite+aiosqlite:///./hob-data.db"
 
 # Create an asynchronous engine
 async_engine = create_async_engine(
-    DATABASE_URL,
-    echo=False,  # Set True to enable SQL logging
-    future=True
+    DATABASE_URL, echo=False, future=True  # Set True to enable SQL logging
 )
 
 # Use async session
-AsyncSessionLocal = sessionmaker(
+AsyncSessionLocal = sessionmaker(  # type: ignore
     bind=async_engine,
     class_=AsyncSession,
     autoflush=False,
     autocommit=False,
-    future=True
+    future=True,
 )
 
 Base = declarative_base()

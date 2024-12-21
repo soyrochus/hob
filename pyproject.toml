@@ -5,6 +5,10 @@ description = "Hob: A private AI-augmented workspace for project notes and files
 authors = ["Iwan van der Kleijn <iwanvanderkleijn@gmail.com>"]
 readme = "README.md"
 license = "MIT"
+packages = [
+    { include = "app", from = "src" },
+    { include = "hob", from = "src" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -21,7 +25,13 @@ aiosqlite = "^0.20.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
+mypy = "^1.14.0"
+flake8 = "^7.1.1"
+black = "^24.10.0"
+ruff = "^0.8.4"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+

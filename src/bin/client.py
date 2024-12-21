@@ -1,12 +1,15 @@
-# Copyright © 2025, MIT License, Author: Iwan van der Kleijn 
+#!/bin/env python
+# Copyright © 2025, MIT License, Author: Iwan van der Kleijn
 # Hob: A private AI-augmented workspace for project notes and files.
 
+import sys
 import requests
 
 API_URL = "http://127.0.0.1:8000"
 # Mock token: In a real scenario, obtain this from /token
 # For demonstration, let's first register and then login to get a token.
 # Or we can assume we already have a token after running the steps manually.
+
 
 def get_token(email: str, password: str) -> str:
     data = {"username": email, "password": password}
@@ -29,8 +32,9 @@ def main():
             print("User registered.")
         else:
             print("User already registered or other issue:", r.text)
-    except:
-        pass
+    except Exception as e:
+        print("Fatal error:", e)
+        sys.exit(1)
 
     token = get_token("johndoe@example.com", "secret")
 
