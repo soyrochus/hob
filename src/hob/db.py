@@ -42,6 +42,13 @@ async def get_db_session():
         yield session
 
 
+def get_async_session_local():
+    global AsyncSessionLocal
+    if AsyncSessionLocal is None:
+        raise RuntimeError("Database not initialized. Call init_db() first.")   
+    return AsyncSessionLocal()
+
+
 def get_db_engine():
     if async_engine is None:
         raise RuntimeError("Database not initialized. Call init_db() first.")

@@ -201,13 +201,13 @@ def create_app():
 
     @app.get("/bundles", response_model=List[BundleResponse])
     async def list_bundles(
-        current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db_session)
+        current_user: dict = Depends(get_current_user), session: AsyncSession = Depends(get_db_session)
     ):
         logger.info("GET /bundles request")
         # Return mock data
 
         # bundles = await db.scalars(select(Bundle))
-        bundles = await services.get_user_bundles(db, current_user["email"])
+        bundles = await services.get_user_bundles(session, current_user["email"])
         return [
             BundleResponse(
                 id=b.id, name=b.name, description=b.description, created_at=b.created_at
