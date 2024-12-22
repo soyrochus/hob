@@ -24,7 +24,6 @@ from .models import Bundle, user_bundle
 #     return bundle
 
 
-
 async def get_user_bundles(session: AsyncSession, user_id: str):
     """
     Fetch all bundles associated with a user.

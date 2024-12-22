@@ -34,7 +34,7 @@ Base = declarative_base()
 
 
 # Dependency to get a database session
-async def get_db():
+async def get_db_session():
     global AsyncSessionLocal
     if AsyncSessionLocal is None:
         raise RuntimeError("Database not initialized. Call init_db() first.")
@@ -42,13 +42,7 @@ async def get_db():
         yield session
 
 
-def get_async_session() -> sessionmaker:
-    if AsyncSessionLocal is None:
-        raise RuntimeError("Database not initialized. Call init_db() first.")
-    return AsyncSessionLocal
-
-
-def get_async_engine():
+def get_db_engine():
     if async_engine is None:
         raise RuntimeError("Database not initialized. Call init_db() first.")
     return async_engine

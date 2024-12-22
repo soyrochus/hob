@@ -2,12 +2,13 @@
 # Hob: A private AI-augmented workspace for project notes and files.
 
 import tomllib
+from typing import Any
 
 SYSTEM = "system"
 
 
 class ConfigurationManager:
-    _config = {}
+    _config: dict[str, Any] = {}
 
     @classmethod
     def load(cls, config_path):

@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # Local imports
 from hob.config import ConfigurationManager as Config
 from hob import services
-from hob.db import init_db, Base, get_async_engine, get_db
+from hob.db import init_db, Base, get_db_engine, get_db_session
 from .schemas import BundleResponse
 
 
@@ -72,7 +72,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 # Lifespan context manager
 async def lifespan(app: FastAPI):
     # Startup tasks (database initialization)
-    async with get_async_engine().begin() as conn:
+    async with get_db_engine().begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     # Yield control to the application
@@ -201,7 +201,7 @@ def create_app():
 
     @app.get("/bundles", response_model=List[BundleResponse])
     async def list_bundles(
-        current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+        current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db_session)
     ):
         logger.info("GET /bundles request")
         # Return mock data
