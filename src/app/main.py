@@ -14,15 +14,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 # Local imports
+from hob import services
 from hob.db import Base, async_engine, get_db
-from hob.models import Bundle
 from .schemas import BundleResponse
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-SECRET_KEY = "supersecretkey"
+# SECRET_KEY = "supersecretkey"
+SECRET_KEY = '3414cf1c7a01c020976330890a3d161d'
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -167,7 +168,8 @@ async def list_bundles(
     logger.info("GET /bundles request")
     # Return mock data
 
-    bundles = await db.scalars(select(Bundle))
+    # bundles = await db.scalars(select(Bundle))
+    bundles = await services.get_user_bundles(db, current_user["email"])
     return [
         BundleResponse(
             id=b.id, name=b.name, description=b.description, created_at=b.created_at
