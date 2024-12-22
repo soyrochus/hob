@@ -2,6 +2,8 @@
 
 **Hob** is a private, AI-augmented workspace for organizing, searching, and conversing with your project notes and files. It groups your documents, notes, conversations, and other artifacts into “Bundles,” then applies vector-based embeddings for rich semantic search and retrieval.
 
+![Hob](images/hob.png)
+
 **Features:**
 - Create and manage Bundles (projects) containing text notes and files.
 - Asynchronous Jobs for file ingestion, embedding, and search indexing.

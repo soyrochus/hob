@@ -168,5 +168,5 @@ cython_debug/
 # Local for Hob
 
 hob-data.db
-images/
 doc/Hob-container-diagram-c4.xcf
+*/**/__attic__ 
