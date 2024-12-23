@@ -1,8 +1,10 @@
 # Copyright © 2025, MIT License, Author: Iwan van der Kleijn
 # Hob: A private AI-augmented workspace for project notes and files.
 
+
 class ServiceManager:
-    _services = {}
+
+    _services = {}  # type: ignore
 
     @classmethod
     def register(cls, name, service):
@@ -15,5 +17,3 @@ class ServiceManager:
     @classmethod
     def get_llm(cls):
         return cls.get("llm")
-
-   

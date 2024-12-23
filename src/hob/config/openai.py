@@ -21,8 +21,8 @@ class OpenAILLM(LLM):
         # Initialize the OpenAI chat model with the asynchronous interface
         self.llm = ChatOpenAI(
             model=config.get("openai", "model"),
-            openai_api_key=config.get("openai", "api-key")
-        ) 
+            openai_api_key=config.get("openai", "api-key"),
+        )
 
     async def send(self, prompt: str) -> str:
         # Send the prompt using the asynchronous OpenAI chat model

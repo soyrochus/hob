@@ -11,10 +11,7 @@ from hob.services import ServiceManager
 SYSTEM = "system"
 
 
-PROVIDERS = {
-    "mock": MockInitializer,
-    "openai": openai.Initializer
-}
+PROVIDERS = {"mock": MockInitializer, "openai": openai.Initializer}
 
 
 class ConfigurationManager:
