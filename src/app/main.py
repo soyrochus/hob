@@ -4,6 +4,7 @@
 import argparse
 import logging
 from datetime import datetime, timedelta
+import os
 from typing import List, Optional
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -11,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from jose import JWTError, jwt
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
+import uvicorn
 
 # Local imports
 from hob.config import ConfigurationManager as Config
@@ -26,7 +28,8 @@ def parse_arguments():
     """
     Parse command-line arguments to get the configuration file path.
     """
-    parser = argparse.ArgumentParser(description="Run the application server.")
+    parser = argparse.ArgumentParser(description="Run the Hob application server.")
+
     parser.add_argument(
         "-c",
         "--config",
@@ -34,12 +37,31 @@ def parse_arguments():
         default="hob-config.toml",
         help="Path to the TOML configuration file (default: hob-config.toml)",
     )
+    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind the server.")
+    parser.add_argument("--port", type=int, default=8000, help="Port to bind the server.")
+    parser.add_argument("--reload", action="store_true", help="Enable auto-reload.")
+    parser.add_argument("--log-level", type=str, default="info", help="Logging level.")
+    
+    # Parse known and unknown args
+    args, unknown_args = parser.parse_known_args()
+    
+    # Prepare uvicorn kwargs
+    uvicorn_kwargs = {
+        "host": args.host,
+        "port": args.port,
+        "reload": args.reload,
+        "log_level": args.log_level
+    }
+
+    print(f"Starting server with: {uvicorn_kwargs}")
+    print(f"Unknown parameters passed to uvicorn: {unknown_args}")
+    
     # Allow unknown arguments to pass through (used by uvicorn)
-    args, unknown = parser.parse_known_args()
-    return args
+    
+    return args, uvicorn_kwargs, unknown_args
 
 
-def initialize_config(config_path="hob-config.toml"):
+def initialize_config(config_path: str):
     """
     Initialize the application with the given configuration.
     """
@@ -133,13 +155,12 @@ async def get_current_user(session: AsyncSession = Depends(get_db_session),
 
 
 # Uvicorn expects an `app` variable in this module
-def create_app():
+def create_app(config_path: str = "hob-config.toml"):
     """
     Define the ASGI application.
     """
 
-    args = parse_arguments()
-    initialize_config(args.config)
+    initialize_config(config_path)
 
     app = FastAPI(lifespan=lifespan)
 
@@ -196,8 +217,6 @@ def create_app():
     async def root():
         return {"message": "Hob is running"}
 
-   
-
 
     @app.get("/chat", response_model=List[ChatResponse])
     async def chat(
@@ -208,4 +227,28 @@ def create_app():
     
     return app
 
-app = create_app()
+
+app = None  # Ensure app is a global variable
+
+
+def create_app_once():
+    global app
+    if app is None:  # Initialize app only once
+        config_path = os.environ.get("HOB_APP_CONFIG_PATH")
+        app = create_app(config_path)
+    return app
+
+
+def main():
+    
+    args, uvicorn_kwargs, _ = parse_arguments()
+    # Set the config path in an environment variable
+    os.environ["HOB_APP_CONFIG_PATH"] = args.config
+    
+    create_app_once()
+    # Run uvicorn
+    uvicorn.run("app.main:create_app_once", factory=True, **uvicorn_kwargs)
+
+
+if __name__ == "__main__":
+    main()
