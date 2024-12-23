@@ -17,7 +17,8 @@ from hob.config import ConfigurationManager as Config
 from hob.data.api import get_user_bundles, get_user_by_email, get_user_by_login
 from hob.data.db import init_db, Base, get_db_engine, get_db_session
 from hob.auth import validate_password
-from .schemas import BundleResponse, UserData
+from hob.services import ServiceManager
+from .schemas import BundleResponse, ChatResponse, UserData
 
 
 
@@ -44,8 +45,8 @@ def initialize_config(config_path="hob-config.toml"):
     """
     Config.load(config_path)
 
-    # Initialize all configurable providers
-    #Config.resolve()
+    # Initialize all configurable services
+    Config.initialize_services()
 
     # Initialize the database
     init_db()
@@ -195,7 +196,16 @@ def create_app():
     async def root():
         return {"message": "Hob is running"}
 
-    return app
+   
 
+
+    @app.get("/chat", response_model=List[ChatResponse])
+    async def chat(
+        current_user: UserData = Depends(get_current_user)
+    ):
+        message = await ServiceManager.get_llm().send(f"Hello, I am {current_user.name}, who are you?")
+        return [ChatResponse(message=message)]
+    
+    return app
 
 app = create_app()

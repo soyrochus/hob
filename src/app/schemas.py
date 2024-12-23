@@ -21,3 +21,7 @@ class BundleResponse(BaseModel):
     name: str
     description: Optional[str] = None
     created_at: datetime
+
+class ChatResponse(BaseModel):
+
+    message: str

@@ -7,5 +7,5 @@ ai-provider = "openai"
 
 [openai]
 api-key="FILL YOUR API KEY HERE"
-model = "gpt4o"
+model = "gpt-4o"
 

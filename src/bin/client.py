@@ -29,6 +29,13 @@ def main():
     else:
         print("Failed to fetch bundles:", resp.status_code, resp.text)
 
+    resp = requests.get(f"{API_URL}/chat", headers=headers)
+    if resp.status_code == 200:
+        response = resp.json()
+        print("LLM Response:", response)
+    else:
+        print("Failed to fetch bundles:", resp.status_code, resp.text)
+
 
 if __name__ == "__main__":
     main()
