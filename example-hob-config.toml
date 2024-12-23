@@ -3,6 +3,7 @@
 
 [system]
 database-url = "sqlite+aiosqlite:///./hob-data.db"
+ai-provider = "openai"
 
 [openai]
 api-key="FILL YOUR API KEY HERE"

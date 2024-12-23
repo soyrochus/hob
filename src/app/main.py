@@ -14,8 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local imports
 from hob.config import ConfigurationManager as Config
-from hob import services
-from hob.db import init_db, Base, get_db_engine, get_db_session
+from hob.data.api import get_user_bundles, get_user_by_email, get_user_by_login
+from hob.data.db import init_db, Base, get_db_engine, get_db_session
 from hob.auth import validate_password
 from .schemas import BundleResponse, UserData
 
@@ -43,6 +43,9 @@ def initialize_config(config_path="hob-config.toml"):
     Initialize the application with the given configuration.
     """
     Config.load(config_path)
+
+    # Initialize all configurable providers
+    #Config.resolve()
 
     # Initialize the database
     init_db()
@@ -95,7 +98,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 
 async def authenticate_user(session: AsyncSession, username: str, password: str):
-    user = await services.get_user_by_login(session, username)
+    user = await get_user_by_login(session, username)
     if not user:
         return None
     
@@ -121,7 +124,7 @@ async def get_current_user(session: AsyncSession = Depends(get_db_session),
     except JWTError:
         raise credentials_exception
     
-    user = await services.get_user_by_email(session, email)
+    user = await get_user_by_email(session, email)
     if user is None:
         raise credentials_exception
     
@@ -180,7 +183,7 @@ def create_app():
         logger.info("GET /bundles request")
 
         # bundles = await db.scalars(select(Bundle))
-        bundles = await services.get_user_bundles(session, current_user.id)
+        bundles = await get_user_bundles(session, current_user.id)
         return [
             BundleResponse(
                 id=b.id, name=b.name, description=b.description, created_at=b.created_at

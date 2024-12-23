@@ -4,9 +4,9 @@
 import pytest
 from hob.auth import hash_password
 from hob.config import ConfigurationManager as Config
-from hob.db import get_db_engine, get_async_session_local, init_db, Base
-from hob.models import Artifact, Bundle, User, user_bundle
-from hob.services import get_user_bundles, get_user_by_login
+from hob.data.db import get_db_engine, get_async_session_local, init_db, Base
+from hob.data.models import Artifact, Bundle, User, user_bundle
+from hob.data.api import get_user_bundles, get_user_by_login
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
