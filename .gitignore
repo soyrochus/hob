@@ -170,3 +170,5 @@ cython_debug/
 hob-data.db
 doc/Hob-container-diagram-c4.xcf
 */**/__attic__ 
+
+hob-config.toml

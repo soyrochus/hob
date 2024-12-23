@@ -3,3 +3,8 @@
 
 [system]
 database-url = "sqlite+aiosqlite:///./hob-data.db"
+
+[openai]
+api-key="FILL YOUR API KEY HERE"
+model = "gpt4o"
+
