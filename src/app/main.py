@@ -9,14 +9,16 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from jose import JWTError, jwt
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local imports
 from hob.config import ConfigurationManager as Config
 from hob import services
 from hob.db import init_db, Base, get_db_engine, get_db_session
-from .schemas import BundleResponse
+from hob.auth import validate_password
+from .schemas import BundleResponse, UserData
+
 
 
 def parse_arguments():
@@ -25,10 +27,11 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(description="Run the application server.")
     parser.add_argument(
-        "-c", "--config",
+        "-c",
+        "--config",
         type=str,
         default="hob-config.toml",
-        help="Path to the TOML configuration file (default: hob-config.toml)"
+        help="Path to the TOML configuration file (default: hob-config.toml)",
     )
     # Allow unknown arguments to pass through (used by uvicorn)
     args, unknown = parser.parse_known_args()
@@ -40,10 +43,10 @@ def initialize_config(config_path="hob-config.toml"):
     Initialize the application with the given configuration.
     """
     Config.load(config_path)
-    
+
     # Initialize the database
     init_db()
-    
+
     print(f"Application initialized with config: {config_path}")
 
 
@@ -53,18 +56,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # SECRET_KEY = "supersecretkey"
-SECRET_KEY = '3414cf1c7a01c020976330890a3d161d'
+SECRET_KEY = "3414cf1c7a01c020976330890a3d161d"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-fake_users_db = {
-    "johndoe@example.com": {
-        "name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "fakehashedsecret",  # In reality, store hashed passwords
-        "age": 30,
-    }
-}
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -86,18 +81,7 @@ async def lifespan(app: FastAPI):
 class Token(BaseModel):
     access_token: str
     token_type: str
-
-
-class UserRegistration(BaseModel):
-    name: str
-    email: EmailStr
-    age: int
-    password: str
-
-
-class TokenData(BaseModel):
-    email: Optional[str] = None
-
+    
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -110,17 +94,19 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-def authenticate_user(email: str, password: str):
-    user = fake_users_db.get(email)
+async def authenticate_user(session: AsyncSession, username: str, password: str):
+    user = await services.get_user_by_login(session, username)
     if not user:
         return None
-    # This is a demo. Normally you'd verify the password here.
-    if password != "secret":  # A real system would hash and check
-        return None
-    return user
+    
+    if validate_password(password, user.password):
+        return user
+    else:
+        None
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(session: AsyncSession = Depends(get_db_session), 
+                           token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -131,13 +117,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-        token_data = TokenData(email=email)
+        
     except JWTError:
         raise credentials_exception
-    user = fake_users_db.get(token_data.email)
+    
+    user = await services.get_user_by_email(session, email)
     if user is None:
         raise credentials_exception
-    return user
+    
+    return UserData(id=user.id, login=user.login, name=user.name, email=user.email)
 
 
 # Uvicorn expects an `app` variable in this module
@@ -169,52 +157,36 @@ def create_app():
         allow_headers=["*"],
     )
 
-
-    @app.post("/register", status_code=201)
-    async def register_user(user: UserRegistration):
-        logger.info(f"Register attempt: {user.email}")
-        if user.email in fake_users_db:
-            raise HTTPException(status_code=400, detail="Email already registered")
-        fake_users_db[user.email] = {
-            "name": user.name,
-            "email": user.email,
-            "hashed_password": "fakehashed" + user.password,
-            "age": user.age,
-        }
-        return {"status": "success"}
-
-
     @app.post("/token", response_model=Token)
-    async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    async def login(form_data: OAuth2PasswordRequestForm = Depends(), 
+                    session: AsyncSession = Depends(get_db_session)):
         logger.info(f"Login attempt: {form_data.username}")
-        user = authenticate_user(form_data.username, form_data.password)
+        user = await authenticate_user(session, form_data.username, form_data.password)
         if not user:
             logger.warning("Invalid credentials")
             raise HTTPException(status_code=401, detail="Invalid credentials")
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user["email"]}, expires_delta=access_token_expires
+            data={"sub": user.email}, expires_delta=access_token_expires
         )
         logger.info("Login successful")
         return {"access_token": access_token, "token_type": "bearer"}
 
-
     @app.get("/bundles", response_model=List[BundleResponse])
     async def list_bundles(
-        current_user: dict = Depends(get_current_user), session: AsyncSession = Depends(get_db_session)
+        current_user: UserData = Depends(get_current_user),
+        session: AsyncSession = Depends(get_db_session),
     ):
         logger.info("GET /bundles request")
-        # Return mock data
 
         # bundles = await db.scalars(select(Bundle))
-        bundles = await services.get_user_bundles(session, current_user["email"])
+        bundles = await services.get_user_bundles(session, current_user.id)
         return [
             BundleResponse(
                 id=b.id, name=b.name, description=b.description, created_at=b.created_at
             )
             for b in bundles
         ]
-
 
     @app.get("/")
     async def root():
@@ -224,5 +196,3 @@ def create_app():
 
 
 app = create_app()
-
-

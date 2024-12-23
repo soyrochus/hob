@@ -2,7 +2,17 @@
 # Hob: A private AI-augmented workspace for project notes and files.
 
 from datetime import datetime
-from sqlalchemy import Column, DateTime, String, Table, Text, ForeignKey, JSON
+from sqlalchemy import (
+    Column,
+    DateTime,
+    String,
+    Table,
+    Text,
+    ForeignKey,
+    JSON,
+    func,
+    Integer,
+)
 from sqlalchemy.orm import relationship
 from .db import Base
 
@@ -49,9 +59,17 @@ user_bundle = Table(
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(String, primary_key=True)
+    id = Column(
+        Integer, primary_key=True, autoincrement=True
+    )  # Works for both SQLite and PostgreSQL
+    login = Column(String, nullable=False, unique=True)
     name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
+    password = Column(String, nullable=False)
+
+    created_at = Column(
+        DateTime, default=datetime.utcnow, server_default=func.now(), nullable=False
+    )
 
     # Relationship with Bundles
     bundles = relationship("Bundle", secondary=user_bundle, back_populates="users")
@@ -60,8 +78,12 @@ class User(Base):
 class Bundle(Base):
     __tablename__ = "bundles"
 
-    id = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)  # Optional description field
+    created_at = Column(
+        DateTime, default=datetime.utcnow, server_default=func.now(), nullable=False
+    )
 
     # Relationship with Users
     users = relationship("User", secondary=user_bundle, back_populates="bundles")
@@ -76,12 +98,14 @@ class Bundle(Base):
 class Artifact(Base):
     __tablename__ = "artifacts"
 
-    id = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     type = Column(String, nullable=False)  # E.g., "text", "zip", "file", "url"
     origin = Column(String, nullable=False)  # Pointer to the data's source
     attributes = Column(JSON, nullable=True)  # Additional attributes
-    date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(
+        DateTime, default=datetime.utcnow, server_default=func.now(), nullable=False
+    )
 
     # Foreign key
     bundle_id = Column(String, ForeignKey("bundles.id"), nullable=False)
@@ -96,7 +120,7 @@ class Artifact(Base):
 class Element(Base):
     __tablename__ = "elements"
 
-    id = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     type = Column(String, nullable=False)
     namespace = Column(String, nullable=False)  # Location or identifier of the element
     content = Column(Text, nullable=True)  # Textual content of the element
@@ -111,8 +135,11 @@ class Element(Base):
 class Conversation(Base):
     __tablename__ = "conversations"
 
-    id = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
+    created_at = Column(
+        DateTime, default=datetime.utcnow, server_default=func.now(), nullable=False
+    )
 
     # Foreign key
     bundle_id = Column(String, ForeignKey("bundles.id"), nullable=False)
@@ -127,7 +154,7 @@ class Conversation(Base):
 class Interaction(Base):
     __tablename__ = "interactions"
 
-    id = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     prompt = Column(Text, nullable=False)  # User's question
     response = Column(Text, nullable=False)  # AI's answer
 

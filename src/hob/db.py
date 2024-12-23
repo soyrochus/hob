@@ -14,10 +14,12 @@ def init_db():
     # DATABASE_URL = "sqlite+aiosqlite:///./hob-data.db"
     global DATABASE_URL, async_engine, AsyncSessionLocal
     DATABASE_URL = Config.get(SYSTEM, "database-url")
-
+    DEBUG = Config.get(SYSTEM, "debug", False)
     # Create an asynchronous engine
     async_engine = create_async_engine(
-        DATABASE_URL, echo=False, future=True  # Set True to enable SQL logging
+        DATABASE_URL,
+        echo=DEBUG,
+        future=True,  # Set True to enable SQL logging
     )
 
     # Use async session
@@ -45,7 +47,7 @@ async def get_db_session():
 def get_async_session_local():
     global AsyncSessionLocal
     if AsyncSessionLocal is None:
-        raise RuntimeError("Database not initialized. Call init_db() first.")   
+        raise RuntimeError("Database not initialized. Call init_db() first.")
     return AsyncSessionLocal()
 
 

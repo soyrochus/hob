@@ -5,7 +5,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
-from .models import Bundle, user_bundle
+from .models import Bundle, User, user_bundle
 
 
 # # Create a new User
@@ -24,14 +24,47 @@ from .models import Bundle, user_bundle
 #     return bundle
 
 
-async def get_user_bundles(session: AsyncSession, user_id: str):
+async def get_user_bundles(session: AsyncSession, user_id: int):
     """
     Fetch all bundles associated with a user.
     """
     result = await session.execute(
         select(Bundle)
+        .distinct()  # Ensure unique results
         .join(user_bundle, user_bundle.c.bundle_id == Bundle.id)
         .where(user_bundle.c.user_id == user_id)
         .options(joinedload(Bundle.users))
     )
-    return result.scalars().all()
+    return result.unique().scalars().all()
+
+
+async def get_user_by_login(session: AsyncSession, user_name: str) -> User | None:
+    """
+    Fetch a User by their login / username from the database.
+
+    Args:
+        session (AsyncSession): The database session.
+        user_name (str): The login/user name of the user to fetch.
+
+    Returns:
+        User | None: The User instance if found, or None otherwise.
+    """
+    result = await session.execute(select(User).where(User.login == user_name))
+    user = result.scalar_one_or_none()  # Fetch one result or return None
+    return user
+
+
+async def get_user_by_email(session: AsyncSession, email: str) -> User | None:
+    """
+    Fetch a User by their email from the database.
+
+    Args:
+        session (AsyncSession): The database session.
+        email (str): The email address of the user to fetch.
+
+    Returns:
+        User | None: The User instance if found, or None otherwise.
+    """
+    result = await session.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()  # Fetch one result or return None
+    return user
