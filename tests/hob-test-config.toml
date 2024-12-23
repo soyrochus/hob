@@ -4,3 +4,8 @@
 [system]
 debug=true
 database-url = "sqlite+aiosqlite:///:memory:"
+ai-provider = "mock"
+
+[mock]
+response="This is a mock response"
+

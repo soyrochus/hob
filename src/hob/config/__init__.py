@@ -4,13 +4,18 @@
 import tomllib
 from typing import Any
 from hob.config import openai
+from hob.config.mock_provider import MockInitializer
 from hob.exceptions import ConfigurationError
 from hob.services import ServiceManager
 
 SYSTEM = "system"
+
+
 PROVIDERS = {
+    "mock": MockInitializer,
     "openai": openai.Initializer
 }
+
 
 class ConfigurationManager:
     _config: dict[str, Any] = {}
