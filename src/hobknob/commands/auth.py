@@ -53,7 +53,6 @@ async def auth_logout_handler(args):
     print("Logout successful.")
 
 
-
 # Configure arguments directly in the function
 def configure_auth_login(parser):
     parser.add_argument("--username", required=True, help="Your username")

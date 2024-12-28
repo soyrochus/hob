@@ -64,7 +64,7 @@ class HTTPClient:
         params: Optional[Dict[str, Any]] = None,
         data: Optional[Union[Dict[str, Any], BaseModel]] = None,
         form_data: bool = False,
-        response_model: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None
     ) -> Union[T, httpx.Response]:
         """Make a synchronous HTTP request."""
         if isinstance(data, BaseModel):
@@ -75,9 +75,15 @@ class HTTPClient:
         else:
             response = self.client.request(method, endpoint, params=params, json=data)
         response.raise_for_status()
+  
         if response_model:
-            return response_model.model_validate_json(response.json())
-        return response
+            return_data = response.json()
+            if isinstance(return_data, list):
+                return [response_model.model_validate(item) for item in return_data]  # type: ignore
+            else:
+                return response_model.model_validate(return_data)
+        else:
+            return response
 
     async def _request_async(
         self,
@@ -86,7 +92,7 @@ class HTTPClient:
         params: Optional[Dict[str, Any]] = None,
         data: Optional[Union[Dict[str, Any], BaseModel]] = None,
         form_data: bool = False,
-        response_model: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None
     ) -> Union[T, httpx.Response]:
         """Make an asynchronous HTTP request."""
         if isinstance(data, BaseModel):
@@ -101,16 +107,27 @@ class HTTPClient:
                 method, endpoint, params=params, json=data  # type: ignore
             )
         response.raise_for_status()
+
+        # if response_model:
+        #     if is_sequence:
+        #         return [response_model.model_validate(item) for item in response.json()]  # type: ignore
+        #     else:
+        #         return response_model.model_validate_json(response.text)
+        
         if response_model:
-            # Validate and parse the response to the Pydantic model if it is set
-            return response_model.model_validate_json(response.text)
-        return response
+            return_data = response.json()
+            if isinstance(return_data, list):
+                return [response_model.model_validate(item) for item in return_data]  # type: ignore
+            else:
+                return response_model.model_validate(return_data)
+        else:
+            return response
 
     def get(
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
-        response_model: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None
     ):
         return self._request(
             "GET", endpoint, params=params, response_model=response_model
@@ -120,7 +137,7 @@ class HTTPClient:
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
-        response_model: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None
     ):
         return await self._request_async(
             "GET", endpoint, params=params, response_model=response_model
@@ -131,14 +148,14 @@ class HTTPClient:
         endpoint: str,
         data: Optional[Union[Dict[str, Any], BaseModel]] = None,
         form_data: bool = False,
-        response_model: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None
     ):
         return self._request(
             "POST",
             endpoint,
             data=data,
             form_data=form_data,
-            response_model=response_model,
+            response_model=response_model
         )
 
     async def post_async(
@@ -146,14 +163,14 @@ class HTTPClient:
         endpoint: str,
         data: Optional[Union[Dict[str, Any], BaseModel]] = None,
         form_data: bool = False,
-        response_model: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None
     ):
         return await self._request_async(
             "POST",
             endpoint,
             data=data,
             form_data=form_data,
-            response_model=response_model,
+            response_model=response_model
         )
 
     def put(

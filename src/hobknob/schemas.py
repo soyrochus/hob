@@ -4,6 +4,8 @@
 # from the command line. It provides a simple interface to the Hob API.
 
 
+from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel
 
 
@@ -15,3 +17,10 @@ class Response(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class BundleResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    created_at: datetime

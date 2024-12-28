@@ -15,7 +15,7 @@ from hobknob.schemas import Response
     auth_required=False,
 )
 async def info_ping_handler(args):
-    """Checklto see if server is running"""
+    """Check to see if server is running"""
 
     client = get_client()
     try:
