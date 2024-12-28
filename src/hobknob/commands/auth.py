@@ -10,6 +10,8 @@ from hobknob.commands import cli_handler
 from hobknob.config import get_config
 from hobknob.schemas import Token
 
+TOKEN_KEY = "token"
+
 
 @cli_handler(
     "auth", subcommand="login", description="Login to Hob", auth_required=False
@@ -30,7 +32,7 @@ async def auth_login_handler(args):
             "/token", data=data, form_data=True, response_model=Token
         )
         config = get_config()
-        config.write_state({"token": response.access_token})
+        config.update_state({TOKEN_KEY: response.access_token})
         print("Logged in successfully.")
     except HTTPStatusError as e:
         if e.response.status_code == 401:
@@ -46,10 +48,12 @@ async def auth_login_handler(args):
 async def auth_logout_handler(args):
     """Log out of the system."""
     config = get_config()
-    state = config.read_state()
-    # remove the token from the state file
-    state.pop("token", None)
-    config.write_state(state)
+
+    config.remove_state(TOKEN_KEY)
+    # state = config.read_state()
+    # # remove the token from the state file
+    # state.pop("token", None)
+    # config.write_state(state)
     print("Logout successful.")
 
 

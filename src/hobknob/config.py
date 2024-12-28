@@ -96,6 +96,22 @@ class FileBasedConfigState(ConfigStateInterface):
         with open(self._state_file, "w") as f:
             yaml.safe_dump(state, f)
 
+    def update_state(self, state: dict) -> None:
+        """
+        Updates the state file with the given state dictionary.
+        """
+        current_state = self.read_state()
+        current_state.update(state)
+        self.write_state(current_state)
+
+    def remove_state(self, key: str) -> None:
+        """
+        Removes the given key from the state file.
+        """
+        current_state = self.read_state()
+        current_state.pop(key, None)
+        self.write_state(current_state)
+
 
 _config: Optional[ConfigStateInterface] = None
 
