@@ -26,7 +26,9 @@ class ConfigurationManager:
             with open(config_path, "rb") as f:
                 cls._config = tomllib.load(f)
         except FileNotFoundError as e:
-            raise ConfigurationError(f"Configuration file not found: {config_path}") from e
+            raise ConfigurationError(
+                f"Configuration file not found: {config_path}"
+            ) from e
 
     @classmethod
     def get(cls, section, key, default=None):

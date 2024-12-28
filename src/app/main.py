@@ -23,7 +23,6 @@ from hob.services import ServiceManager
 from .schemas import BundleResponse, ChatResponse, UserData
 
 
-
 def parse_arguments():
     """
     Parse command-line arguments to get the configuration file path.
@@ -37,27 +36,31 @@ def parse_arguments():
         default="hob-config.toml",
         help="Path to the TOML configuration file (default: hob-config.toml)",
     )
-    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind the server.")
-    parser.add_argument("--port", type=int, default=8000, help="Port to bind the server.")
+    parser.add_argument(
+        "--host", type=str, default="127.0.0.1", help="Host to bind the server."
+    )
+    parser.add_argument(
+        "--port", type=int, default=8000, help="Port to bind the server."
+    )
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload.")
     parser.add_argument("--log-level", type=str, default="info", help="Logging level.")
-    
+
     # Parse known and unknown args
     args, unknown_args = parser.parse_known_args()
-    
+
     # Prepare uvicorn kwargs
     uvicorn_kwargs = {
         "host": args.host,
         "port": args.port,
         "reload": args.reload,
-        "log_level": args.log_level
+        "log_level": args.log_level,
     }
 
     print(f"Starting server with: {uvicorn_kwargs}")
     print(f"Unknown parameters passed to uvicorn: {unknown_args}")
-    
+
     # Allow unknown arguments to pass through (used by uvicorn)
-    
+
     return args, uvicorn_kwargs, unknown_args
 
 
@@ -107,7 +110,7 @@ async def lifespan(app: FastAPI):
 class Token(BaseModel):
     access_token: str
     token_type: str
-    
+
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -124,15 +127,16 @@ async def authenticate_user(session: AsyncSession, username: str, password: str)
     user = await get_user_by_login(session, username)
     if not user:
         return None
-    
+
     if validate_password(password, user.password):
         return user
     else:
         None
 
 
-async def get_current_user(session: AsyncSession = Depends(get_db_session), 
-                           token: str = Depends(oauth2_scheme)):
+async def get_current_user(
+    session: AsyncSession = Depends(get_db_session), token: str = Depends(oauth2_scheme)
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -140,18 +144,18 @@ async def get_current_user(session: AsyncSession = Depends(get_db_session),
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
+        email: Optional[str] = payload.get("sub")
         if email is None:
             raise credentials_exception
-        
+
     except JWTError:
         raise credentials_exception
-    
+
     user = await get_user_by_email(session, email)
     if user is None:
         raise credentials_exception
-    
-    return UserData(id=user.id, login=user.login, name=user.name, email=user.email)
+
+    return UserData(id=user.id, login=user.login, name=user.name, email=user.email)  # type: ignore
 
 
 # Uvicorn expects an `app` variable in this module
@@ -183,8 +187,10 @@ def create_app(config_path: str = "hob-config.toml"):
     )
 
     @app.post("/token", response_model=Token)
-    async def login(form_data: OAuth2PasswordRequestForm = Depends(), 
-                    session: AsyncSession = Depends(get_db_session)):
+    async def login(
+        form_data: OAuth2PasswordRequestForm = Depends(),
+        session: AsyncSession = Depends(get_db_session),
+    ):
         logger.info(f"Login attempt: {form_data.username}")
         user = await authenticate_user(session, form_data.username, form_data.password)
         if not user:
@@ -217,14 +223,13 @@ def create_app(config_path: str = "hob-config.toml"):
     async def root():
         return {"message": "Hob is running"}
 
-
     @app.get("/chat", response_model=List[ChatResponse])
-    async def chat(
-        current_user: UserData = Depends(get_current_user)
-    ):
-        message = await ServiceManager.get_llm().send(f"Hello, I am {current_user.name}, who are you?")
+    async def chat(current_user: UserData = Depends(get_current_user)):
+        message = await ServiceManager.get_llm().send(
+            f"Hello, I am {current_user.name}, who are you?"
+        )
         return [ChatResponse(message=message)]
-    
+
     return app
 
 
@@ -240,11 +245,11 @@ def create_app_once():
 
 
 def main():
-    
+
     args, uvicorn_kwargs, _ = parse_arguments()
     # Set the config path in an environment variable
     os.environ["HOB_APP_CONFIG_PATH"] = args.config
-    
+
     create_app_once()
     # Run uvicorn
     uvicorn.run("app.main:create_app_once", factory=True, **uvicorn_kwargs)

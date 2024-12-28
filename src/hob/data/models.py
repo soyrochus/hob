@@ -59,6 +59,8 @@ user_bundle = Table(
 class User(Base):
     __tablename__ = "users"
 
+    model_config = {"from_attributes": True}  # Enables ORM mode
+
     id = Column(
         Integer, primary_key=True, autoincrement=True
     )  # Works for both SQLite and PostgreSQL

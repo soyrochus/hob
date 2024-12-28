@@ -6,9 +6,9 @@ import subprocess
 
 def run_checks() -> None:
     commands = [
-        ["black", "src/hob"],
-        ["flake8", "src/hob"],
-        ["mypy", "src/hob"],
+        ["black", "src/hob", "src/hobknob", "src/app"],
+        ["flake8", "src/hob", "src/hobknob", "src/app"],
+        ["mypy", "src/hob", "src/hobknob", "src/app"],
         ["pytest"],
     ]
 

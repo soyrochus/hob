@@ -7,7 +7,8 @@ readme = "README.md"
 license = "MIT"
 packages = [
     { include = "app", from = "src" },
-    { include = "hob", from = "src" }
+    { include = "hob", from = "src" },
+    { include = "hobknob", from = "src"}
 ]
 
 [tool.poetry.dependencies]
@@ -35,6 +36,25 @@ flake8 = "^7.1.1"
 black = "^24.10.0"
 ruff = "^0.8.4"
 pytest-asyncio = "^0.25.0"
+lxml-stubs = "^0.5.1"
+pandas-stubs = "^2.2.3.241126"
+types-pillow = "^10.2.0.20240822"
+types-pyyaml = "^6.0.12.20241221"
+types-pygments = "^2.18.0.20240506"
+types-beautifulsoup4 = "^4.12.0.20241020"
+types-colorama = "^0.4.15.20240311"
+types-jsonschema = "^4.23.0.20241208"
+types-protobuf = "^5.29.1.20241207"
+types-psutil = "^6.1.0.20241221"
+types-python-jose = "^3.3.4.20240106"
+types-regex = "^2024.11.6.20241221"
+types-requests = "^2.32.0.20241016"
+types-setuptools = "^75.6.0.20241223"
+types-tqdm = "^4.67.0.20241221"
+types-tree-sitter = "^0.20.1.20240311"
+types-tree-sitter-languages = "^1.10.0.20240612"
+types-ujson = "^5.10.0.20240515"
+types-xmltodict = "^0.14.0.20241009"
 
 [build-system]
 requires = ["poetry-core"]
