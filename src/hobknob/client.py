@@ -9,6 +9,8 @@ from pydantic import BaseModel
 import httpx
 from enum import Enum
 
+from hobknob.config import get_config
+
 # Type variable for Pydantic models
 T = TypeVar("T", bound=BaseModel)
 
@@ -106,13 +108,13 @@ class HTTPClient:
             response = await self.async_client.request(
                 method, endpoint, params=params, json=data  # type: ignore
             )
+        
+        if response.status_code == 401:
+            self._jwt_token = None
+            config = get_config()
+            config.remove_state("token")
+            
         response.raise_for_status()
-
-        # if response_model:
-        #     if is_sequence:
-        #         return [response_model.model_validate(item) for item in response.json()]  # type: ignore
-        #     else:
-        #         return response_model.model_validate_json(response.text)
 
         if response_model:
             return_data = response.json()
