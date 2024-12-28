@@ -40,32 +40,37 @@ class FileBasedConfigState(ConfigStateInterface):
     File-based implementation of the ConfigStateInterface.
     """
 
-    def __init__(self, app_name: str, config_file: Optional[str] = None, state_file: Optional[str] = None):
+    def __init__(
+        self,
+        app_name: str,
+        config_file: Optional[str] = None,
+        state_file: Optional[str] = None,
+    ):
         self._app_name = app_name
-        
+
         home_directory = Path.home() / f".{app_name}"
         os.makedirs(home_directory, exist_ok=True)
-        
+
         if config_file:
             self._config_file = Path(config_file)
             self._custom_config_file = True
         else:
             self._config_file = home_directory / "{app_name}-config.toml"
             self._custom_config_file = False
-        
+
         if state_file:
             self._state_file = Path(state_file)
         else:
-            self._state_file = home_directory / f"{app_name}-state.dta"  # Use .dta ext but it's a yaml file
-
-        
+            self._state_file = (
+                home_directory / f"{app_name}-state.dta"
+            )  # Use .dta ext but it's a yaml file
 
     def read_config(self) -> dict:
         """
         Reads the YAML configuration file and returns it as a dictionary.
         """
         if not os.path.exists(self._config_file):
-            
+
             if self._custom_config_file:
                 raise FileNotFoundError(f"Config file not found: {self._config_file}")
             else:
@@ -92,7 +97,7 @@ class FileBasedConfigState(ConfigStateInterface):
             yaml.safe_dump(state, f)
 
 
-_config : Optional[ConfigStateInterface] = None
+_config: Optional[ConfigStateInterface] = None
 
 
 def get_config() -> ConfigStateInterface:

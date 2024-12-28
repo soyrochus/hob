@@ -20,15 +20,22 @@ class ClientType(Enum):
 
 
 class HTTPClient:
-    def __init__(self, base_url: str, headers: Optional[Dict[str, str]] = None, mode: ClientType = ClientType.Dual):
+    def __init__(
+        self,
+        base_url: str,
+        headers: Optional[Dict[str, str]] = None,
+        mode: ClientType = ClientType.Dual,
+    ):
         self.base_url = base_url
         self.headers = headers or {}
         if mode is ClientType.Synchronous or mode is ClientType.Dual:
             self.client = httpx.Client(base_url=self.base_url, headers=self.headers)
         if mode is ClientType.Asynchronous or mode is ClientType.Dual:
-            self.async_client = httpx.AsyncClient(base_url=self.base_url, headers=self.headers)
-        self._jwt_token : Optional[str] = None
-        
+            self.async_client = httpx.AsyncClient(
+                base_url=self.base_url, headers=self.headers
+            )
+        self._jwt_token: Optional[str] = None
+
     def get_jwt_token(self) -> Optional[str]:
         """Get the JWT token for authorization."""
         return self._jwt_token
@@ -83,41 +90,109 @@ class HTTPClient:
     ) -> Union[T, httpx.Response]:
         """Make an asynchronous HTTP request."""
         if isinstance(data, BaseModel):
-            data = data.model_dump_json() # type: ignore
+            data = data.model_dump_json()  # type: ignore
         if form_data:
             # Use url-encoded form data
-            response = await self.async_client.request(method, endpoint, params=params, data=data)
+            response = await self.async_client.request(
+                method, endpoint, params=params, data=data  # type: ignore
+            )
         else:
-            response = await self.async_client.request(method, endpoint, params=params, json=data)
+            response = await self.async_client.request(
+                method, endpoint, params=params, json=data  # type: ignore
+            )
         response.raise_for_status()
         if response_model:
             # Validate and parse the response to the Pydantic model if it is set
             return response_model.model_validate_json(response.text)
         return response
 
-    def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None, response_model: Optional[Type[T]] = None):
-        return self._request("GET", endpoint, params=params, response_model=response_model)
+    def get(
+        self,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        response_model: Optional[Type[T]] = None,
+    ):
+        return self._request(
+            "GET", endpoint, params=params, response_model=response_model
+        )
 
-    async def get_async(self, endpoint: str, params: Optional[Dict[str, Any]] = None, response_model: Optional[Type[T]] = None):
-        return await self._request_async("GET", endpoint, params=params, response_model=response_model)
+    async def get_async(
+        self,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        response_model: Optional[Type[T]] = None,
+    ):
+        return await self._request_async(
+            "GET", endpoint, params=params, response_model=response_model
+        )
 
-    def post(self, endpoint: str, data: Optional[Union[Dict[str, Any], BaseModel]] = None, form_data: bool = False, response_model: Optional[Type[T]] = None):
-        return self._request("POST", endpoint, data=data, form_data=form_data, response_model=response_model)
+    def post(
+        self,
+        endpoint: str,
+        data: Optional[Union[Dict[str, Any], BaseModel]] = None,
+        form_data: bool = False,
+        response_model: Optional[Type[T]] = None,
+    ):
+        return self._request(
+            "POST",
+            endpoint,
+            data=data,
+            form_data=form_data,
+            response_model=response_model,
+        )
 
-    async def post_async(self, endpoint: str, data: Optional[Union[Dict[str, Any], BaseModel]] = None, form_data: bool = False,  response_model: Optional[Type[T]] = None):
-        return await self._request_async("POST", endpoint, data=data, form_data=form_data, response_model=response_model)
+    async def post_async(
+        self,
+        endpoint: str,
+        data: Optional[Union[Dict[str, Any], BaseModel]] = None,
+        form_data: bool = False,
+        response_model: Optional[Type[T]] = None,
+    ):
+        return await self._request_async(
+            "POST",
+            endpoint,
+            data=data,
+            form_data=form_data,
+            response_model=response_model,
+        )
 
-    def put(self, endpoint: str, data: Optional[Union[Dict[str, Any], BaseModel]] = None, response_model: Optional[Type[T]] = None):
+    def put(
+        self,
+        endpoint: str,
+        data: Optional[Union[Dict[str, Any], BaseModel]] = None,
+        response_model: Optional[Type[T]] = None,
+    ):
         return self._request("PUT", endpoint, data=data, response_model=response_model)
 
-    async def put_async(self, endpoint: str, data: Optional[Union[Dict[str, Any], BaseModel]] = None, response_model: Optional[Type[T]] = None):
-        return await self._request_async("PUT", endpoint, data=data, response_model=response_model)
+    async def put_async(
+        self,
+        endpoint: str,
+        data: Optional[Union[Dict[str, Any], BaseModel]] = None,
+        response_model: Optional[Type[T]] = None,
+    ):
+        return await self._request_async(
+            "PUT", endpoint, data=data, response_model=response_model
+        )
 
-    def delete(self, endpoint: str, params: Optional[Dict[str, Any]] = None, response_model: Optional[Type[T]] = None):
-        return self._request("DELETE", endpoint, params=params, response_model=response_model)
+    def delete(
+        self,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        response_model: Optional[Type[T]] = None,
+    ):
+        return self._request(
+            "DELETE", endpoint, params=params, response_model=response_model
+        )
 
-    async def delete_async(self, endpoint: str, params: Optional[Dict[str, Any]] = None, response_model: Optional[Type[T]] = None):
-        return await self._request_async("DELETE", endpoint, params=params, response_model=response_model)
+    async def delete_async(
+        self,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        response_model: Optional[Type[T]] = None,
+    ):
+        return await self._request_async(
+            "DELETE", endpoint, params=params, response_model=response_model
+        )
 
     async def stream_get(
         self, endpoint: str, params: Optional[Dict[str, Any]] = None
@@ -151,7 +226,9 @@ class HTTPClient:
         Yields:
             AsyncGenerator[str, None]: Chunks of the streamed response.
         """
-        async with self.async_client.stream("POST", endpoint, json=data, params=params) as response:
+        async with self.async_client.stream(
+            "POST", endpoint, json=data, params=params
+        ) as response:
             response.raise_for_status()
             async for chunk in response.aiter_text():
                 yield chunk
@@ -167,7 +244,7 @@ class HTTPClient:
             await self.async_client.aclose()
 
 
-_client : Optional[HTTPClient] = None
+_client: Optional[HTTPClient] = None
 
 
 def get_client() -> HTTPClient:

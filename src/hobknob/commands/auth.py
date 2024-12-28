@@ -11,20 +11,24 @@ from hobknob.config import get_config
 from hobknob.schemas import Token
 
 
-@cli_handler("auth", subcommand="login", description="Login to Hob", auth_required=False)
+@cli_handler(
+    "auth", subcommand="login", description="Login to Hob", auth_required=False
+)
 async def auth_login_handler(args):
     """Log in to the system."""
     user_name = args.username
     password = args.password
-   
+
     data = {
         "username": user_name,
         "password": password,
     }
-    
+
     client = get_client()
-    try:  
-        response = await client.post_async("/token", data=data, form_data=True, response_model=Token) 
+    try:
+        response = await client.post_async(
+            "/token", data=data, form_data=True, response_model=Token
+        )
         config = get_config()
         config.write_state({"token": response.access_token})
         print("Logged in successfully.")
@@ -36,11 +40,18 @@ async def auth_login_handler(args):
             raise e
 
 
-
-@cli_handler("auth", subcommand="logout", description="Logout from Hob", auth_required=False)
+@cli_handler(
+    "auth", subcommand="logout", description="Logout from Hob", auth_required=False
+)
 async def auth_logout_handler(args):
     """Log out of the system."""
-    print("Logging out...")
+    config = get_config()
+    state = config.read_state()
+    # remove the token from the state file
+    state.pop("token", None)
+    config.write_state(state)
+    print("Logout successful.")
+
 
 
 # Configure arguments directly in the function
@@ -50,5 +61,3 @@ def configure_auth_login(parser):
 
 
 auth_login_handler.configure_parser = configure_auth_login
-
-

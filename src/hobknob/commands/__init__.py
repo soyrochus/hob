@@ -17,16 +17,18 @@ SUBCOMMAND_HANDLERS: Dict[str, Dict[str, Callable]] = {}
 def verify_auth(auth_required: bool):
     if auth_required:
         if get_client().get_jwt_token() is None:
-            raise Exception("Authentication required. Use 'hobknob auth login' to authenticate.")
+            raise Exception(
+                "Authentication required. Use 'hobknob auth login' to authenticate."
+            )
     else:
         pass  # No auth required
 
 
 def cli_handler(
     command: str,
-    subcommand: Optional[str] = None, 
+    subcommand: Optional[str] = None,
     description: Optional[str] = None,
-    auth_required: Optional[bool] = True
+    auth_required: Optional[bool] = True,
 ):
     """
     Decorator to register a handler for a command or subcommand.
@@ -59,13 +61,12 @@ async def parse_and_execute(program_name: str, program_description: str, global_
     Parse command-line arguments and execute the appropriate handler.
     """
     parser = argparse.ArgumentParser(prog=program_name, description=program_description)
-    
+
     await global_parser(parser)
-    
+
     subparsers = parser.add_subparsers(
         dest="command", required=True, help="Available commands"
     )
-
 
     # Add top-level commands and subcommands
     for command, command_meta in COMMAND_HANDLERS.items():
@@ -87,19 +88,19 @@ async def parse_and_execute(program_name: str, program_description: str, global_
 
     # Parse arguments
     args = parser.parse_args()
-    
+
     # execute the global handler(s)
     await init_global(args)
-    
+
     # Execute the appropriate handler
     if args.command in COMMAND_HANDLERS:
         handler = COMMAND_HANDLERS[args.command]["handler"]  # type: ignore
-        auth_required = COMMAND_HANDLERS[args.command]["auth_required"] # type: ignore
+        auth_required = COMMAND_HANDLERS[args.command]["auth_required"]  # type: ignore
         verify_auth(auth_required)
         await handler(args)
     elif args.command in SUBCOMMAND_HANDLERS and args.subcommand:
         handler = SUBCOMMAND_HANDLERS[args.command][args.subcommand]["handler"]  # type: ignore
-        auth_required = SUBCOMMAND_HANDLERS[args.command][args.subcommand]["auth_required"] # type: ignore
+        auth_required = SUBCOMMAND_HANDLERS[args.command][args.subcommand]["auth_required"]  # type: ignore
         verify_auth(auth_required)
         await handler(args)
     else:

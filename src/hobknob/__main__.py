@@ -29,48 +29,53 @@ async def global_parser(parser):
         default=None,
         help="Path to the state file.",
     )
-    
+
     return parser
 
 
 async def init_global(args):
-    
+
     if args.config:
         config_file = args.config
     else:
         config_file = None
-    
+
     if args.state:
         state_file = args.state
     else:
         state_file = None
-    
-    config = FileBasedConfigState(APP_NAME, config_file=config_file, state_file=state_file)
+
+    config = FileBasedConfigState(
+        APP_NAME, config_file=config_file, state_file=state_file
+    )
     set_config(config)
-    
+
     config_data = config.read_config()
     url = config_data.get("url", DEFAULT_URL)
-      
+
     client = HTTPClient(url, mode=ClientType.Asynchronous)
-    
+
     state_data = config.read_state()
     token = state_data.get("token", None)
     if token:
         client.set_jwt_token(token)
 
     set_client(client)
-    
-    
+
+
 async def async_main():
     try:
-        await parse_and_execute(program_name=APP_NAME,
-                            program_description=APP_DESCRIPTION,
-                            global_parser=global_parser,
-                            init_global=init_global)
+        await parse_and_execute(
+            program_name=APP_NAME,
+            program_description=APP_DESCRIPTION,
+            global_parser=global_parser,
+            init_global=init_global,
+        )
 
     except Exception as e:
         print(f"Error: {e}")
         exit(1)
+
 
 if __name__ == "__main__":
     asyncio.run(async_main())
