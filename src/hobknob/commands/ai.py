@@ -23,17 +23,20 @@ async def chat_single_handler(args):
         print("Please provide a bundle ID, either as an argument or by selecting a bundle with 'bundles select'")
         return
     
-    # data = {
-    #     "bundle_id": bundle_id,
-    #     "message": args.prompt,
-    #     "conversation_id": None
-    # }
+    data = {
+        "bundle_id": bundle_id,
+        "message": args.prompt,
+        "conversation_id": None
+    }
 
-    data = ChatRequest(bundle_id=bundle_id, message=args.prompt)
-    response = await client.post_async("/chat", data=data, response_model=ChatResponse)
+    # data = ChatRequest(bundle_id=bundle_id, message=args.prompt)
+    # response = await client.post_async("/chat", data=data, response_model=ChatResponse)
+    print("Message:", end=" ")
+    async for s in client.stream_post("/stream", data=data):
+        print(s, end="")
     
-    print(f"Bundle ID: {response.bundle_id}")
-    print(f"Message: {response.message}")
+    # print(f"Bundle ID: {response.bundle_id}")
+    # print(f"Message: {response.message}")
 
 
 def configure_chat_single(parser):

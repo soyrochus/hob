@@ -4,8 +4,9 @@
 
 import logging
 from datetime import timedelta
-from typing import List
+from typing import AsyncGenerator, List
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +22,7 @@ from hobs.auth import (
 from hob.data.api import get_user_bundles
 from hob.data.db import get_db_session
 from hob.services import ServiceManager
-from .schemas import BundleResponse, ChatRequest, ChatResponse, UserData, Token
+from .schemas import BundleResponse, ChatRequest, UserData, Token
 
 logger = logging.getLogger(__name__)
 
@@ -88,14 +89,40 @@ def create_app(lifespan_func):
     async def root():
         return {"message": "Hob is running"}
 
-    @app.post("/chat", response_model=ChatResponse)
-    async def chat(chat_request: ChatRequest,
-                   current_user: UserData = Depends(get_current_user)):
+    # @app.post("/chat", response_model=ChatResponse)
+    # async def chat(chat_request: ChatRequest,
+    #                current_user: UserData = Depends(get_current_user)):
+        
+    #     print(f"Message send: {chat_request}")
+    #     llm: LLM = ServiceManager.get_llm()
+    #     response = await llm.send(chat_request.message)
+    #     print(response)
+    #     return ChatResponse(message=response, bundle_id=1, conversation_id=1)
+
+    # return app
+
+    @app.post("/stream", response_model=None)
+    async def stream_response(chat_request: ChatRequest) -> StreamingResponse:
+        """
+        Endpoint to receive POST data and stream back a response.
+
+        Args:
+            request (Request): The incoming HTTP request.
+
+        Yields:
+            str: Chunks of response data.
+        """
+        # Parse JSON input from the request
+        #data = await request.json()
         
         print(f"Message send: {chat_request}")
         llm: LLM = ServiceManager.get_llm()
-        response = await llm.send(chat_request.message)
-        print(response)
-        return ChatResponse(message=response, bundle_id=1, conversation_id=1)
+        
+        # async def response_generator() -> AsyncGenerator[str, None]:  # type: ignore
+        #     async for chunk in llm.stream(chat_request.message):      # type: ignore
+        #         print(chunk)
+        #         yield chunk
+
+        return StreamingResponse(llm.stream(chat_request.message), media_type="text/plain")
 
     return app

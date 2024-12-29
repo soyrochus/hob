@@ -2,6 +2,7 @@
 # Hob: A private AI-augmented workspace for project notes and files.
 
 
+from typing import AsyncGenerator
 from langchain_openai import ChatOpenAI
 from hob.config.provider_types import LLM
 from hob.services import ServiceManager
@@ -28,3 +29,15 @@ class OpenAILLM(LLM):
         # Send the prompt using the asynchronous OpenAI chat model
         response = await self.llm.ainvoke(prompt)
         return response.content
+
+    async def stream(self, prompt: str) -> AsyncGenerator[str, None]:    # type: ignore
+        # Send the prompt using the streaming OpenAI chat model
+        # Stream the response asynchronously
+        # return self.llm.astream(prompt)
+        
+        async for response in self.llm.astream(prompt):   # type: ignore
+            
+            data = response.content
+            yield data  # type: ignore
+            
+            
