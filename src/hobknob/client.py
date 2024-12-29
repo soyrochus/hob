@@ -72,7 +72,7 @@ class HTTPClient:
     ) -> Union[T, httpx.Response]:
         """Make a synchronous HTTP request."""
         if isinstance(data, BaseModel):
-            data = data.model_dump()
+            data = data.model_dump()  # type: ignore
         if form_data:
             # Use url-encoded form data
             response = self.client.request(method, endpoint, params=params, data=data)
@@ -100,7 +100,7 @@ class HTTPClient:
     ) -> Union[T, httpx.Response]:
         """Make an asynchronous HTTP request."""
         if isinstance(data, BaseModel):
-            data = data.model_dump_json()  # type: ignore
+            data = data.model_dump()  # type: ignore
         if form_data:
             # Use url-encoded form data
             response = await self.async_client.request(

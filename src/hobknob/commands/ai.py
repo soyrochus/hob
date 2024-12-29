@@ -7,7 +7,7 @@ from hobknob.client import get_client
 from hobknob.commands import cli_handler
 from hobknob.commands.bundles import SELECTED_BUNDLE_KEY
 from hobknob.config import get_config
-from hobknob.schemas import ChatResponse
+from hobknob.schemas import ChatResponse, ChatRequest
 
 
 @cli_handler("chat", subcommand="single", description="Single interaction with LLM model in Bundle")
@@ -17,24 +17,21 @@ async def chat_single_handler(args):
     config = get_config()
     client = get_client()
     
-    if not args.prompt:
-        print("Please provide a message to send")
-        return
-    
     set_bundle_id = config.read_state().get(SELECTED_BUNDLE_KEY, None)
     bundle_id = args.bundle or set_bundle_id
     if not bundle_id:
         print("Please provide a bundle ID, either as an argument or by selecting a bundle with 'bundles select'")
         return
     
-    data = {
-        "bundle_id": bundle_id,
-        "message": args.prompt,
-        "conversation_id": None
-    }
+    # data = {
+    #     "bundle_id": bundle_id,
+    #     "message": args.prompt,
+    #     "conversation_id": None
+    # }
 
+    data = ChatRequest(bundle_id=bundle_id, message=args.prompt)
     response = await client.post_async("/chat", data=data, response_model=ChatResponse)
-
+    
     print(f"Bundle ID: {response.bundle_id}")
     print(f"Message: {response.message}")
 
