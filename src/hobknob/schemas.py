@@ -8,15 +8,14 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
-
-class Response(BaseModel):
-
-    message: str
-
-
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class StatusResponse(BaseModel):
+
+    message: str
 
 
 class BundleResponse(BaseModel):
@@ -24,3 +23,17 @@ class BundleResponse(BaseModel):
     name: str
     description: Optional[str] = None
     created_at: datetime
+
+
+class ChatRequest(BaseModel):
+
+    message: str
+    bundle_id: int
+    conversation_id: Optional[int] = None
+
+
+class ChatResponse(BaseModel):
+
+    message: str
+    bundle_id: int
+    conversation_id: int

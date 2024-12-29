@@ -10,6 +10,7 @@ from hobknob.commands import parse_and_execute
 import hobknob.commands.bundles  # noqa:
 import hobknob.commands.auth  # noqa:
 import hobknob.commands.info  # noqa:
+import hobknob.commands.ai  # noqa:
 
 from hobknob.config import FileBasedConfigState, set_config
 

@@ -5,7 +5,7 @@
 
 from hobknob.client import get_client
 from hobknob.commands import cli_handler
-from hobknob.schemas import Response
+from hobknob.schemas import StatusResponse
 
 
 @cli_handler(
@@ -19,7 +19,7 @@ async def info_ping_handler(args):
 
     client = get_client()
     try:
-        response = await client.get_async("/", response_model=Response)
+        response = await client.get_async("/", response_model=StatusResponse)
         if response.message == "Hob is running":
             print(f"Server is running on {client.base_url}")
         else:

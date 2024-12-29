@@ -2,6 +2,9 @@
 # Hob: A private AI-augmented workspace for project notes and files.
 
 
+from hob.config.provider_types import LLM
+
+
 class ServiceManager:
 
     _services = {}  # type: ignore
@@ -11,9 +14,9 @@ class ServiceManager:
         cls._services[name] = service
 
     @classmethod
-    def get(cls, name):
+    def get(cls, name) -> object:
         return cls._services[name]
 
     @classmethod
-    def get_llm(cls):
+    def get_llm(cls) -> LLM:
         return cls.get("llm")

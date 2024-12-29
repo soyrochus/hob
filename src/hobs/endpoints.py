@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local imports
+from hob.config.provider_types import LLM
 from hobs.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     authenticate_user,
@@ -92,10 +93,8 @@ def create_app(lifespan_func):
                    current_user: UserData = Depends(get_current_user)):
         
         print(f"Message send: {chat_request}")
-        response = await ServiceManager.get_llm().send(
-            
-           
-        )
-        return [ChatResponse(message=message)]
+        llm: LLM = ServiceManager.get_llm()
+        response = await llm.send(chat_request.message)
+        return [ChatResponse(message=response, bundleid=1, conversation_id=1)]
 
     return app
