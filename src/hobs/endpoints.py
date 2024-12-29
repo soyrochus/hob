@@ -1,6 +1,6 @@
 # Copyright © 2025, MIT License, Author: Iwan van der Kleijn
 # Hob: A private AI-augmented workspace for project notes and files.
-
+# Hobs is the API service for Hob. It provides a simple interface to the Hob API.
 
 import logging
 from datetime import timedelta
@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local imports
-from app.auth import (
+from hobs.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     authenticate_user,
     create_access_token,
@@ -20,7 +20,7 @@ from app.auth import (
 from hob.data.api import get_user_bundles
 from hob.data.db import get_db_session
 from hob.services import ServiceManager
-from .schemas import BundleResponse, ChatResponse, UserData, Token
+from .schemas import BundleResponse, ChatRequest, ChatResponse, UserData, Token
 
 logger = logging.getLogger(__name__)
 
@@ -87,10 +87,14 @@ def create_app(lifespan_func):
     async def root():
         return {"message": "Hob is running"}
 
-    @app.get("/chat", response_model=List[ChatResponse])
-    async def chat(current_user: UserData = Depends(get_current_user)):
-        message = await ServiceManager.get_llm().send(
-            f"Hello, I am {current_user.name}, who are you?"
+    @app.post("/chat", response_model=List[ChatResponse])
+    async def chat(chat_request: ChatRequest,
+                   current_user: UserData = Depends(get_current_user)):
+        
+        print(f"Message send: {chat_request}")
+        response = await ServiceManager.get_llm().send(
+            
+           
         )
         return [ChatResponse(message=message)]
 

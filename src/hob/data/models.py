@@ -1,7 +1,7 @@
 # Copyright © 2025, MIT License, Author: Iwan van der Kleijn
 # Hob: A private AI-augmented workspace for project notes and files.
 
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import (
     Column,
     DateTime,
@@ -19,6 +19,11 @@ from .db import Base
 from enum import Enum
 
 # Utility types
+
+
+def get_current_utc() -> datetime:
+    """ Get the current time in UTC. """
+    return datetime.now(timezone.utc)
 
 
 class ArtifactType(Enum):
@@ -70,7 +75,7 @@ class User(Base):
     password = Column(String, nullable=False)
 
     created_at = Column(
-        DateTime, default=datetime.utcnow, server_default=func.now(), nullable=False
+        DateTime, default=get_current_utc, server_default=func.now(), nullable=False
     )
 
     # Relationship with Bundles
@@ -84,7 +89,7 @@ class Bundle(Base):
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)  # Optional description field
     created_at = Column(
-        DateTime, default=datetime.utcnow, server_default=func.now(), nullable=False
+        DateTime, default=get_current_utc, server_default=func.now(), nullable=False
     )
 
     # Relationship with Users
@@ -106,7 +111,7 @@ class Artifact(Base):
     origin = Column(String, nullable=False)  # Pointer to the data's source
     attributes = Column(JSON, nullable=True)  # Additional attributes
     created_at = Column(
-        DateTime, default=datetime.utcnow, server_default=func.now(), nullable=False
+        DateTime, default=get_current_utc, server_default=func.now(), nullable=False
     )
 
     # Foreign key
@@ -140,7 +145,7 @@ class Conversation(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     created_at = Column(
-        DateTime, default=datetime.utcnow, server_default=func.now(), nullable=False
+        DateTime, default=get_current_utc, server_default=func.now(), nullable=False
     )
 
     # Foreign key

@@ -1,5 +1,6 @@
 # Copyright © 2025, MIT License, Author: Iwan van der Kleijn
 # Hob: A private AI-augmented workspace for project notes and files.
+# Hobs is the API service for Hob. It provides a simple interface to the Hob API.
 
 import argparse
 import logging
@@ -8,7 +9,7 @@ from fastapi import FastAPI
 import uvicorn
 
 # Local imports
-from app.endpoints import create_app
+from hobs.endpoints import create_app
 from hob.config import ConfigurationManager as Config
 from hob.data.db import init_db, Base, get_db_engine
 
@@ -110,7 +111,7 @@ def main():
 
     create_app_once()
     # Run uvicorn
-    uvicorn.run("app.main:create_app_once", factory=True, **uvicorn_kwargs)
+    uvicorn.run("hobs.main:create_app_once", factory=True, **uvicorn_kwargs)
 
 
 if __name__ == "__main__":
