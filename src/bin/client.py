@@ -34,7 +34,7 @@ def main():
         response = resp.json()
         print("LLM Response:", response)
     else:
-        print("Failed to fetch bundles:", resp.status_code, resp.text)
+        print("Failed to fetch LLM reply:", resp.status_code, resp.text)
 
 
 if __name__ == "__main__":

@@ -3,10 +3,10 @@
 
 import argparse
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 import os
 from typing import List, Optional
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from jose import JWTError, jwt
@@ -135,7 +135,9 @@ async def authenticate_user(session: AsyncSession, username: str, password: str)
 
 
 async def get_current_user(
-    session: AsyncSession = Depends(get_db_session), token: str = Depends(oauth2_scheme)
+    response: Response,
+    session: AsyncSession = Depends(get_db_session),
+    token: str = Depends(oauth2_scheme),
 ):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -147,6 +149,19 @@ async def get_current_user(
         email: Optional[str] = payload.get("sub")
         if email is None:
             raise credentials_exception
+        
+        # Check token expiration
+        exp = datetime.utcfromtimestamp(payload["exp"])
+        current_time = datetime.utcnow()
+        trigger_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES * 0.8)
+        # Refresh the token if used but ignoring frequent repeated use
+        # during the first 20% of its lifetime
+        if current_time > (exp - trigger_delta):
+            access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+            access_token = create_access_token(
+                data={"sub": email}, expires_delta=access_token_expires
+            )
+            response.headers["Authorization"] = f"Bearer {access_token}"
 
     except JWTError:
         raise credentials_exception

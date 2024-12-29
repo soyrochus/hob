@@ -4,12 +4,12 @@
 # from the command line. It provides a simple interface to the Hob API.
 
 
-from typing import Type, TypeVar, Optional, Union, Dict, Any, AsyncGenerator
+from typing import Callable, Type, TypeVar, Optional, Union, Dict, Any, AsyncGenerator
 from pydantic import BaseModel
 import httpx
 from enum import Enum
 
-from hobknob.config import get_config
+from hobknob.config import ConfigStateInterface, get_config
 
 # Type variable for Pydantic models
 T = TypeVar("T", bound=BaseModel)
@@ -27,6 +27,7 @@ class HTTPClient:
         base_url: str,
         headers: Optional[Dict[str, str]] = None,
         mode: ClientType = ClientType.Dual,
+        config: Optional[ConfigStateInterface] = None,
     ):
         self.base_url = base_url
         self.headers = headers or {}
@@ -37,6 +38,7 @@ class HTTPClient:
                 base_url=self.base_url, headers=self.headers
             )
         self._jwt_token: Optional[str] = None
+        self.config_instance = config
 
     def get_jwt_token(self) -> Optional[str]:
         """Get the JWT token for authorization."""
@@ -77,7 +79,7 @@ class HTTPClient:
         else:
             response = self.client.request(method, endpoint, params=params, json=data)
         response.raise_for_status()
-
+            
         if response_model:
             return_data = response.json()
             if isinstance(return_data, list):
@@ -115,6 +117,18 @@ class HTTPClient:
             config.remove_state("token")
             
         response.raise_for_status()
+        
+        # If the response contains a new JWT token, update the client
+        auth_header = response.headers.get("Authorization")
+        if auth_header:
+            
+            new_token = auth_header.split()[1]
+            self.set_jwt_token(new_token)
+            if not self.config_instance:
+                _config = get_config()
+            else:
+                _config = self.config_instance
+            _config.update_state({"token": new_token})
 
         if response_model:
             return_data = response.json()
