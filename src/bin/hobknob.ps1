@@ -3,4 +3,4 @@
 # Hobknob is the cli tool for using and managing the Hob appllication server
 # from the command line. It provides a simple interface to the Hob API.
 
-poetry run python -m hobknob "$@"
+poetry run python -m hobknob $args

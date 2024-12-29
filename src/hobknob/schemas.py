@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -25,15 +26,9 @@ class BundleResponse(BaseModel):
     created_at: datetime
 
 
-class ChatRequest(BaseModel):
-
-    message: str
-    bundle_id: int
-    conversation_id: Optional[int] = None
-
-
 class ChatResponse(BaseModel):
 
     message: str
     bundle_id: int
     conversation_id: int
+    

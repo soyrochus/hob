@@ -67,7 +67,7 @@ class FileBasedConfigState(ConfigStateInterface):
             self._config_file = Path(config_file)
             self._custom_config_file = True
         else:
-            self._config_file = home_directory / "{app_name}-config.toml"
+            self._config_file = home_directory / f"{app_name}-config.toml"
             self._custom_config_file = False
 
         if state_file:

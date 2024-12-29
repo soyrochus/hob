@@ -88,13 +88,14 @@ def create_app(lifespan_func):
     async def root():
         return {"message": "Hob is running"}
 
-    @app.post("/chat", response_model=List[ChatResponse])
+    @app.post("/chat", response_model=ChatResponse)
     async def chat(chat_request: ChatRequest,
                    current_user: UserData = Depends(get_current_user)):
         
         print(f"Message send: {chat_request}")
         llm: LLM = ServiceManager.get_llm()
         response = await llm.send(chat_request.message)
-        return [ChatResponse(message=response, bundleid=1, conversation_id=1)]
+        print(response)
+        return ChatResponse(message=response, bundle_id=1, conversation_id=1)
 
     return app
