@@ -3,24 +3,14 @@
 
 import argparse
 import logging
-from datetime import UTC, datetime, timedelta, timezone
 import os
-from typing import List, Optional
-from fastapi import FastAPI, Depends, HTTPException, Response, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.middleware.cors import CORSMiddleware
-from jose import JWTError, jwt
-from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import FastAPI
 import uvicorn
 
 # Local imports
+from app.endpoints import create_app
 from hob.config import ConfigurationManager as Config
-from hob.data.api import get_user_bundles, get_user_by_email, get_user_by_login
-from hob.data.db import init_db, Base, get_db_engine, get_db_session
-from hob.auth import validate_password
-from hob.services import ServiceManager
-from .schemas import BundleResponse, ChatResponse, UserData
+from hob.data.db import init_db, Base, get_db_engine
 
 
 def parse_arguments():
@@ -84,14 +74,6 @@ def initialize_config(config_path: str):
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# SECRET_KEY = "supersecretkey"
-SECRET_KEY = "3414cf1c7a01c020976330890a3d161d"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
 
 # Lifespan context manager
 async def lifespan(app: FastAPI):
@@ -107,147 +89,7 @@ async def lifespan(app: FastAPI):
     pass
 
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-async def authenticate_user(session: AsyncSession, username: str, password: str):
-    user = await get_user_by_login(session, username)
-    if not user:
-        return None
-
-    if validate_password(password, user.password):
-        return user
-    else:
-        None
-
-
-async def get_current_user(
-    response: Response,
-    session: AsyncSession = Depends(get_db_session),
-    token: str = Depends(oauth2_scheme),
-):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: Optional[str] = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-        
-        # Check token expiration
-        exp = datetime.utcfromtimestamp(payload["exp"])
-        current_time = datetime.utcnow()
-        trigger_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES * 0.8)
-        # Refresh the token if used but ignoring frequent repeated use
-        # during the first 20% of its lifetime
-        if current_time > (exp - trigger_delta):
-            access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-            access_token = create_access_token(
-                data={"sub": email}, expires_delta=access_token_expires
-            )
-            response.headers["Authorization"] = f"Bearer {access_token}"
-
-    except JWTError:
-        raise credentials_exception
-
-    user = await get_user_by_email(session, email)
-    if user is None:
-        raise credentials_exception
-
-    return UserData(id=user.id, login=user.login, name=user.name, email=user.email)  # type: ignore
-
-
-# Uvicorn expects an `app` variable in this module
-def create_app(config_path: str = "hob-config.toml"):
-    """
-    Define the ASGI application.
-    """
-
-    initialize_config(config_path)
-
-    app = FastAPI(lifespan=lifespan)
-
-    # CORS configuration
-    # For a production environment, you should specify the allowed origins
-    # app.add_middleware(
-    #     CORSMiddleware,
-    #     allow_origins=["https://your-frontend-domain.com"],
-    #     allow_credentials=True,
-    #     allow_methods=["GET", "POST"],
-    #     allow_headers=["Authorization", "Content-Type"],
-    # )
-
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
-    @app.post("/token", response_model=Token)
-    async def login(
-        form_data: OAuth2PasswordRequestForm = Depends(),
-        session: AsyncSession = Depends(get_db_session),
-    ):
-        logger.info(f"Login attempt: {form_data.username}")
-        user = await authenticate_user(session, form_data.username, form_data.password)
-        if not user:
-            logger.warning("Invalid credentials")
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": user.email}, expires_delta=access_token_expires
-        )
-        logger.info("Login successful")
-        return {"access_token": access_token, "token_type": "bearer"}
-
-    @app.get("/bundles", response_model=List[BundleResponse])
-    async def list_bundles(
-        current_user: UserData = Depends(get_current_user),
-        session: AsyncSession = Depends(get_db_session),
-    ):
-        logger.info("GET /bundles request")
-
-        # bundles = await db.scalars(select(Bundle))
-        bundles = await get_user_bundles(session, current_user.id)
-        return [
-            BundleResponse(
-                id=b.id, name=b.name, description=b.description, created_at=b.created_at
-            )
-            for b in bundles
-        ]
-
-    @app.get("/")
-    async def root():
-        return {"message": "Hob is running"}
-
-    @app.get("/chat", response_model=List[ChatResponse])
-    async def chat(current_user: UserData = Depends(get_current_user)):
-        message = await ServiceManager.get_llm().send(
-            f"Hello, I am {current_user.name}, who are you?"
-        )
-        return [ChatResponse(message=message)]
-
-    return app
-
-
+# FastAPI application expects an app variable in the global scope
 app = None  # Ensure app is a global variable
 
 
@@ -255,7 +97,8 @@ def create_app_once():
     global app
     if app is None:  # Initialize app only once
         config_path = os.environ.get("HOB_APP_CONFIG_PATH")
-        app = create_app(config_path)
+        initialize_config(config_path)
+        app = create_app(lifespan)
     return app
 
 

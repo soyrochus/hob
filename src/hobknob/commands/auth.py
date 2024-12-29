@@ -48,13 +48,14 @@ async def auth_login_handler(args):
 async def auth_logout_handler(args):
     """Log out of the system."""
     reset_auth()
-  
+
     print("Logout successful.")
 
 
 def reset_auth():
     config = get_config()
     config.remove_state(TOKEN_KEY)
+
 
 # Configure arguments directly in the function
 def configure_auth_login(parser):

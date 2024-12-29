@@ -4,7 +4,7 @@
 # from the command line. It provides a simple interface to the Hob API.
 
 
-from typing import Callable, Type, TypeVar, Optional, Union, Dict, Any, AsyncGenerator
+from typing import Type, TypeVar, Optional, Union, Dict, Any, AsyncGenerator
 from pydantic import BaseModel
 import httpx
 from enum import Enum
@@ -79,7 +79,7 @@ class HTTPClient:
         else:
             response = self.client.request(method, endpoint, params=params, json=data)
         response.raise_for_status()
-            
+
         if response_model:
             return_data = response.json()
             if isinstance(return_data, list):
@@ -110,18 +110,18 @@ class HTTPClient:
             response = await self.async_client.request(
                 method, endpoint, params=params, json=data  # type: ignore
             )
-        
+
         if response.status_code == 401:
             self._jwt_token = None
             config = get_config()
             config.remove_state("token")
-            
+
         response.raise_for_status()
-        
+
         # If the response contains a new JWT token, update the client
         auth_header = response.headers.get("Authorization")
         if auth_header:
-            
+
             new_token = auth_header.split()[1]
             self.set_jwt_token(new_token)
             if not self.config_instance:

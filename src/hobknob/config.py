@@ -33,7 +33,7 @@ class ConfigStateInterface(Protocol):
         Write the given state to the state file.
         """
         ...
-    
+
     def update_state(self, state: dict) -> None:
         """
         Updates the state file with the given state dictionary.
@@ -45,6 +45,7 @@ class ConfigStateInterface(Protocol):
         Removes the given key from the state file.
         """
         ...
+
 
 class FileBasedConfigState(ConfigStateInterface):
     """

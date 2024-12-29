@@ -11,7 +11,7 @@ import hobknob.commands.bundles  # noqa:
 import hobknob.commands.auth  # noqa:
 import hobknob.commands.info  # noqa:
 
-from hobknob.config import FileBasedConfigState, get_config, set_config
+from hobknob.config import FileBasedConfigState, set_config
 
 APP_NAME = "hobknob"
 APP_DESCRIPTION = "Hobknob is the CLI tool for using and managing the Hob application server from the command line."
@@ -32,7 +32,7 @@ async def global_parser(parser):
 
     return parser
 
-  
+
 async def init_global(args):
 
     if args.config:
