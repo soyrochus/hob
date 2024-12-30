@@ -56,7 +56,9 @@ def cli_handler(
     return decorator
 
 
-async def parse_and_execute(program_name: str, program_description: str, global_parser: Any, init_global: Any):  # type: ignore
+async def parse_and_execute(
+    program_name: str, program_description: str, global_parser: Any, init_global: Any
+):  # type: ignore
     """
     Parse command-line arguments and execute the appropriate handler.
     """
@@ -81,7 +83,8 @@ async def parse_and_execute(program_name: str, program_description: str, global_
         )
         for subcommand, subcommand_meta in subcommands.items():
             sub_cmd_parser = sub_subparsers.add_parser(
-                subcommand, help=subcommand_meta["description"]  # type: ignore
+                subcommand,
+                help=subcommand_meta["description"],  # type: ignore
             )
             if hasattr(subcommand_meta["handler"], "configure_parser"):  # type: ignore
                 subcommand_meta["handler"].configure_parser(sub_cmd_parser)  # type: ignore
@@ -100,7 +103,9 @@ async def parse_and_execute(program_name: str, program_description: str, global_
         await handler(args)
     elif args.command in SUBCOMMAND_HANDLERS and args.subcommand:
         handler = SUBCOMMAND_HANDLERS[args.command][args.subcommand]["handler"]  # type: ignore
-        auth_required = SUBCOMMAND_HANDLERS[args.command][args.subcommand]["auth_required"]  # type: ignore
+        auth_required = SUBCOMMAND_HANDLERS[args.command][args.subcommand][
+            "auth_required"
+        ]  # type: ignore
         verify_auth(auth_required)
         await handler(args)
     else:

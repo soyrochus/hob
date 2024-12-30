@@ -18,7 +18,6 @@ class Initializer:
 
 class OpenAILLM(LLM):
     def __init__(self, config):
-
         # Initialize the OpenAI chat model with the asynchronous interface
         self.llm = ChatOpenAI(
             model=config.get("openai", "model"),
@@ -30,14 +29,11 @@ class OpenAILLM(LLM):
         response = await self.llm.ainvoke(prompt)
         return response.content
 
-    async def stream(self, prompt: str) -> AsyncGenerator[str, None]:    # type: ignore
+    async def stream(self, prompt: str) -> AsyncGenerator[str, None]:  # type: ignore
         # Send the prompt using the streaming OpenAI chat model
         # Stream the response asynchronously
         # return self.llm.astream(prompt)
-        
-        async for response in self.llm.astream(prompt):   # type: ignore
-            
+
+        async for response in self.llm.astream(prompt):  # type: ignore
             data = response.content
             yield data  # type: ignore
-            
-            

@@ -82,7 +82,6 @@ class FileBasedConfigState(ConfigStateInterface):
         Reads the YAML configuration file and returns it as a dictionary.
         """
         if not os.path.exists(self._config_file):
-
             if self._custom_config_file:
                 raise FileNotFoundError(f"Config file not found: {self._config_file}")
             else:

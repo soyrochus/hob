@@ -12,38 +12,37 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 @pytest.fixture
 async def db_session():
-    Config.load('./tests/hob-test-config.toml')
-    
+    Config.load("./tests/hob-test-config.toml")
+
     init_db()
-    
+
     # Initialize the database engine
     engine = get_db_engine()
-    
+
     async with engine.begin() as conn:
         # Create all tables
         await conn.run_sync(Base.metadata.create_all)
 
     # Create a session for testing
-    session = get_async_session_local() 
-    
+    session = get_async_session_local()
+
     yield session  # Provide the session to the test
 
-  
 
 @pytest.mark.asyncio
 async def test_get_user_bundle(db_session) -> None:
     async with db_session as session:
         await initialize_bundles(session)
-        
-        user = await get_user_by_login(session, 'test')
-        assert user.name == 'Test User'
-        
+
+        user = await get_user_by_login(session, "test")
+        assert user.name == "Test User"
+
         bundles = await get_user_bundles(session, user.id)
         assert len(bundles) == 2
-        assert bundles[0].name == 'Hob Project'
+        assert bundles[0].name == "Hob Project"
 
 
-async def initialize_bundles(session: AsyncSession): # type: ignore
+async def initialize_bundles(session: AsyncSession):  # type: ignore
     """
     Populates the database with mock data: a user, two bundles, and artifacts.
     """
@@ -52,9 +51,9 @@ async def initialize_bundles(session: AsyncSession): # type: ignore
         login="test",
         name="Test User",
         email="test@example.com",
-        password=hash_password("meep")  # Hash the password
+        password=hash_password("meep"),  # Hash the password
     )
-    session.add(user)   
+    session.add(user)
 
     # Flush to get the auto-generated user ID
     await session.flush()
@@ -72,16 +71,10 @@ async def initialize_bundles(session: AsyncSession): # type: ignore
 
     # Create artifacts
     artifact1 = Artifact(
-        name="Prompt Template",
-        type="text",
-        origin="Stored in DB",
-        bundle_id=bundle1_id
+        name="Prompt Template", type="text", origin="Stored in DB", bundle_id=bundle1_id
     )
     artifact2 = Artifact(
-        name="Personal Text",
-        type="text",
-        origin="Stored in DB",
-        bundle_id=bundle2_id
+        name="Personal Text", type="text", origin="Stored in DB", bundle_id=bundle2_id
     )
     session.add_all([artifact1, artifact2])
 

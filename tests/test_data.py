@@ -6,8 +6,7 @@ from hob.data.models import ArtifactType
 
 def test_articfact_type():
     assert str(ArtifactType.GITHUB) == "github"
-  
+
     prompt_template = ArtifactType.from_string("prompt-template")
     assert str(prompt_template) == "prompt-template"
     assert prompt_template is ArtifactType.PROMPT_TEMPLATE
-    

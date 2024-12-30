@@ -63,4 +63,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 check-all = "hob.run_checks:run_checks"
+check-all-ruff = "hob.run_checks:run_checks_ruff"
+
 

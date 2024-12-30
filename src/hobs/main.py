@@ -104,7 +104,6 @@ def create_app_once():
 
 
 def main():
-
     args, uvicorn_kwargs, _ = parse_arguments()
     # Set the config path in an environment variable
     os.environ["HOB_APP_CONFIG_PATH"] = args.config

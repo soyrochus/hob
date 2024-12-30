@@ -104,11 +104,17 @@ class HTTPClient:
         if form_data:
             # Use url-encoded form data
             response = await self.async_client.request(
-                method, endpoint, params=params, data=data  # type: ignore
+                method,
+                endpoint,
+                params=params,
+                data=data,  # type: ignore
             )
         else:
             response = await self.async_client.request(
-                method, endpoint, params=params, json=data  # type: ignore
+                method,
+                endpoint,
+                params=params,
+                json=data,  # type: ignore
             )
 
         if response.status_code == 401:
@@ -121,7 +127,6 @@ class HTTPClient:
         # If the response contains a new JWT token, update the client
         auth_header = response.headers.get("Authorization")
         if auth_header:
-
             new_token = auth_header.split()[1]
             self.set_jwt_token(new_token)
             if not self.config_instance:

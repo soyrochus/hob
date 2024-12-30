@@ -3,10 +3,10 @@
 
 
 from hob.config.provider_types import LLM
+from typing import cast
 
 
 class ServiceManager:
-
     _services = {}  # type: ignore
 
     @classmethod
@@ -19,4 +19,4 @@ class ServiceManager:
 
     @classmethod
     def get_llm(cls) -> LLM:
-        return cls.get("llm")
+        return cast(LLM, cls.get("llm"))

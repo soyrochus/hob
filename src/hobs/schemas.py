@@ -29,14 +29,12 @@ class BundleResponse(BaseModel):
 
 
 class ChatResponse(BaseModel):
-
     message: str
     bundle_id: int
     conversation_id: int
 
 
 class ChatRequest(BaseModel):
-
     message: str
     bundle_id: int
     conversation_id: Optional[int] = None

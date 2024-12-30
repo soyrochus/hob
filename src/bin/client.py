@@ -18,7 +18,6 @@ def get_token(username: str, password: str) -> str:
 
 
 def main():
-    
     token = get_token("test", "meep")
 
     headers = {"Authorization": f"Bearer {token}"}

@@ -7,12 +7,13 @@
 import asyncio
 from hobknob.client import ClientType, HTTPClient, set_client
 from hobknob.commands import parse_and_execute
-import hobknob.commands.bundles  # noqa:
-import hobknob.commands.auth  # noqa:
-import hobknob.commands.info  # noqa:
-import hobknob.commands.ai  # noqa:
 
 from hobknob.config import FileBasedConfigState, set_config
+import hobknob.commands.ai
+import hobknob.commands.bundles
+import hobknob.commands.auth
+import hobknob.commands.info
+
 
 APP_NAME = "hobknob"
 APP_DESCRIPTION = "Hobknob is the CLI tool for using and managing the Hob application server from the command line."
@@ -35,7 +36,6 @@ async def global_parser(parser):
 
 
 async def init_global(args):
-
     if args.config:
         config_file = args.config
     else:

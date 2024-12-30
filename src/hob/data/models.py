@@ -22,7 +22,7 @@ from enum import Enum
 
 
 def get_current_utc() -> datetime:
-    """ Get the current time in UTC. """
+    """Get the current time in UTC."""
     return datetime.now(timezone.utc)
 
 

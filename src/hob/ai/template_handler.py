@@ -9,7 +9,6 @@ def load_template(template_path):
     """Load the prompt template from the file."""
 
     if template_path:
-
         with open(template_path, "r") as file:
             return file.read()
 

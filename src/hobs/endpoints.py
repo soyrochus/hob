@@ -4,7 +4,7 @@
 
 import logging
 from datetime import timedelta
-from typing import AsyncGenerator, List
+from typing import List
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -92,7 +92,7 @@ def create_app(lifespan_func):
     # @app.post("/chat", response_model=ChatResponse)
     # async def chat(chat_request: ChatRequest,
     #                current_user: UserData = Depends(get_current_user)):
-        
+
     #     print(f"Message send: {chat_request}")
     #     llm: LLM = ServiceManager.get_llm()
     #     response = await llm.send(chat_request.message)
@@ -113,16 +113,19 @@ def create_app(lifespan_func):
             str: Chunks of response data.
         """
         # Parse JSON input from the request
-        #data = await request.json()
-        
+        # data = await request.json()
+
         print(f"Message send: {chat_request}")
         llm: LLM = ServiceManager.get_llm()
-        
+
         # async def response_generator() -> AsyncGenerator[str, None]:  # type: ignore
         #     async for chunk in llm.stream(chat_request.message):      # type: ignore
         #         print(chunk)
         #         yield chunk
 
-        return StreamingResponse(llm.stream(chat_request.message), media_type="text/plain")
+        return StreamingResponse(
+            llm.stream(chat_request.message),  # type: ignore
+            media_type="text/plain",
+        )
 
     return app

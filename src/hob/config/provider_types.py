@@ -6,5 +6,5 @@ from typing import AsyncGenerator, Protocol
 
 class LLM(Protocol):
     async def send(self, prompt: str) -> str: ...
-    
+
     async def stream(self, prompt: str) -> AsyncGenerator[str, None]: ...

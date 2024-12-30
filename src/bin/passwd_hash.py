@@ -12,7 +12,9 @@ def main():
         description="Hash or validate a password using Argon2."
     )
     parser.add_argument("password", help="The password to hash or validate.")
-    parser.add_argument("-b", "--base64", action="store_true", help="Use base64 encoding/decoding")
+    parser.add_argument(
+        "-b", "--base64", action="store_true", help="Use base64 encoding/decoding"
+    )
     parser.add_argument(
         "-v",
         "--validate",
