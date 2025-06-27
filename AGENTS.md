@@ -1,23 +1,18 @@
-You are an advanced Python code‑generation assistant.
+Below you find the original design. However, that lacked integration of an LLM to turn Hob into a true Agent. 
+Please do the following:
 
-╔════════════════════════════════════════════════════════════════╗
-║                    HIGH‑LEVEL OBJECTIVE                       ║
-╚════════════════════════════════════════════════════════════════╝
-Instead of the current project - Hob - Generate a fully runnable **bicameral agent framework** that:
+In general: make Hob into a real AI Agent according to the high level desing. That includes:
 
-1. **Plans** – A “Planner” LLM turns a user goal into a JSON‑AST plan built only from a fixed set of generic primitives.
-2. **Executes** – An “Executor” walks that AST, resolves pointers, and calls the primitives.
-3. **Evolves** – All components are decoupled by abstract interfaces so new primitives or planner strategies can be plugged in.
 
-╔════════════════════════════════════════════════════════════════╗
-║                  GLOBAL TECHNICAL CONSTRAINTS                 ║
-╚════════════════════════════════════════════════════════════════╝
-• Language         : Python 3.11  
-• Packaging        : **pyproject.toml** + **setuptools**  
-• Lint & typing    : `ruff` + `mypy` (strict)  
-• External libs    : `requests`, `beautifulsoup4`, `lxml`, `jsonschema`, `rich` (CLI pretty‑print)  
-• No other third‑party dependencies; standard library wherever possible.  
-• Every public class/function is fully type‑hinted *and* contains a PEP‑257 docstring.
+- maintain the original design BUT do change where necesarry
+- you need to incorporate an LLM connection using Langchain with the Open AI interface. 
+- assume confugruation using python-dotenv
+- the LLM should be used by the planner and by the tasks where that is relevant (not for deterministic tasks
+by for analystical task it should be used)
+- maintain a proper log for all actions. To a file and to the consol if the DEBUG global variable is set
+
+
+Here follows the original design
 
 ╔════════════════════════════════════════════════════════════════╗
 ║                    PROJECT TREE & FILE ROLES                  ║
