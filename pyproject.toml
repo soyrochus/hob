@@ -1,7 +1,23 @@
 [project]
 name = "hob"
-version = "0.2.0"
-description = "Hob: a no-low code (Bicameral) Agent for building AI applications"
+version = "0.3.0"
+description = "Hob bicameral agent"
 readme = "README.md"
-requires-python = ">=3.12"
-dependencies = []
+requires-python = ">=3.11"
+dependencies = [
+    "requests",
+    "beautifulsoup4",
+    "lxml",
+    "jsonschema",
+    "rich"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+[tool.ruff]
+line-length = 88

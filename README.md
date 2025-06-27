@@ -1,18 +1,42 @@
-# Hob
+# Hob: The Bicameral Agent
 
-**Hob** CHANGE HERE!!!
+Hob is now a lightweight framework for building **bicameral agents** in Python. A planner turns a text goal into a JSON plan and an executor walks that plan using pluggable primitive tools.
 
-[A **hob** is a small, mythological household spirit from English folklore](https://en.wikipedia.org/wiki/Hob_(folklore)), known for helping with chores—unless offended, in which case they become a nuisance. Similarly, Hob the app is your friendly, AI-powered assistant, organizing and managing your project notes and files. Treat it well, and it’ll work wonders; ignore it, and your tasks might just pile up!
+## Setup
 
-![Hob](images/hob.png)
+```bash
+pip install -e .
+```
 
-ADD DETAILS HERE
+## Running the Samples
 
+```bash
+python samples/car_arbitrage.py --goal "find car deals"
+python samples/repl.py
+```
 
-## Copyright and License
+## DSL Specification
 
-Copyright (c) 2025 Iwan van der Kleijn  
-License: MIT License  
+Each plan step is an object with these fields:
 
-For the full license text, see the LICENSE file in the root of the project.
+```json
+{
+  "step": "unique_snake_case_id",
+  "with": "Searcher|Fetcher|Parser|Compute|Store",
+  "args": {"...": "as defined in schemas"}
+}
+```
 
+Pointers reference previous results:
+
+```json
+{ "from": <int>, "field": "a.b[0]" }
+```
+
+See `hob/planner/schemas.py` for full primitive schemas.
+
+## Adding a New Primitive Tool
+
+1. Create a class inheriting `Tool` and implement `run`.
+2. Add the class to `hob/tools/__init__.py` for auto‑registration.
+3. Update planner logic and schemas if the primitive requires new arguments.
