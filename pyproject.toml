@@ -1,34 +1,15 @@
 [tool.poetry]
 name = "hob"
-version = "0.1.0"
-description = "Hob: A private AI-augmented workspace for project notes and files"
+version = "0.2.0"
+description = "Hob: a no-low code platform for building AI applications"
 authors = ["Iwan van der Kleijn <iwanvanderkleijn@gmail.com>"]
 readme = "README.md"
 license = "MIT"
 packages = [
-    { include = "hobs", from = "src" },
-    { include = "hob", from = "src" },
-    { include = "hobknob", from = "src"}
-]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-fastapi = "^0.115.6"
-uvicorn = {extras = ["standard"], version = "^0.34.0"}
-python-jose = {extras = ["cryptography"], version = "^3.3.0"}
-requests = "^2.32.3"
-loguru = "^0.7.3"
-pydantic = {extras = ["email"], version = "^2.10.4"}
-python-multipart = "^0.0.20"
-sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
-aiosqlite = "^0.20.0"
-argon2-cffi = "^23.1.0"
-openai = "^1.58.1"
-langchain-openai = "^0.2.14"
-langchain = "^0.3.13"
-langchain-community = "^0.3.13"
-jinja2 = "^3.1.5"
-httpx = "^0.28.1"
+
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
@@ -36,33 +17,4 @@ mypy = "^1.14.0"
 flake8 = "^7.1.1"
 black = "^24.10.0"
 ruff = "^0.8.4"
-pytest-asyncio = "^0.25.0"
-lxml-stubs = "^0.5.1"
-pandas-stubs = "^2.2.3.241126"
-types-pillow = "^10.2.0.20240822"
-types-pyyaml = "^6.0.12.20241221"
-types-pygments = "^2.18.0.20240506"
-types-beautifulsoup4 = "^4.12.0.20241020"
-types-colorama = "^0.4.15.20240311"
-types-jsonschema = "^4.23.0.20241208"
-types-protobuf = "^5.29.1.20241207"
-types-psutil = "^6.1.0.20241221"
-types-python-jose = "^3.3.4.20240106"
-types-regex = "^2024.11.6.20241221"
-types-requests = "^2.32.0.20241016"
-types-setuptools = "^75.6.0.20241223"
-types-tqdm = "^4.67.0.20241221"
-types-tree-sitter = "^0.20.1.20240311"
-types-tree-sitter-languages = "^1.10.0.20240612"
-types-ujson = "^5.10.0.20240515"
-types-xmltodict = "^0.14.0.20241009"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.scripts]
-check-all = "hob.run_checks:run_checks"
-check-all-ruff = "hob.run_checks:run_checks_ruff"
-
 
