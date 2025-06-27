@@ -1,20 +1,7 @@
-[tool.poetry]
+[project]
 name = "hob"
 version = "0.2.0"
-description = "Hob: a no-low code platform for building AI applications"
-authors = ["Iwan van der Kleijn <iwanvanderkleijn@gmail.com>"]
+description = "Hob: a no-low code (Bicameral) Agent for building AI applications"
 readme = "README.md"
-license = "MIT"
-packages = [
-
-[tool.poetry.dependencies]
-python = "^3.12"
-
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.3.4"
-mypy = "^1.14.0"
-flake8 = "^7.1.1"
-black = "^24.10.0"
-ruff = "^0.8.4"
-
+requires-python = ">=3.12"
+dependencies = []
