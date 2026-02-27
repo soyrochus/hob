@@ -8,6 +8,7 @@ import Image from "next/image";
 // UI components
 import Transcript from "./components/Transcript";
 import Events from "./components/Events";
+import Avatar from "./components/Avatar";
 import BottomToolbar from "./components/BottomToolbar";
 
 // Types
@@ -27,6 +28,7 @@ import { chatSupervisorScenario } from "@/app/agentConfigs/chatSupervisor";
 import { customerServiceRetailCompanyName } from "@/app/agentConfigs/customerServiceRetail";
 import { chatSupervisorCompanyName } from "@/app/agentConfigs/chatSupervisor";
 import { simpleHandoffScenario } from "@/app/agentConfigs/simpleHandoff";
+import { avatarConfigs, defaultBaseImage } from "@/app/agentConfigs/avatarConfig";
 
 // Map used by connect logic for scenarios defined via the SDK.
 const sdkScenarioMap: Record<string, RealtimeAgent[]> = {
@@ -107,6 +109,7 @@ function App() {
 
   const [isEventsPaneExpanded, setIsEventsPaneExpanded] =
     useState<boolean>(true);
+  const [isDebugMode, setIsDebugMode] = useState<boolean>(false);
   const [userText, setUserText] = useState<string>("");
   const [isPTTActive, setIsPTTActive] = useState<boolean>(false);
   const [isPTTUserSpeaking, setIsPTTUserSpeaking] = useState<boolean>(false);
@@ -365,6 +368,12 @@ function App() {
     if (storedAudioPlaybackEnabled) {
       setIsAudioPlaybackEnabled(storedAudioPlaybackEnabled === "true");
     }
+    const storedDebugMode = localStorage.getItem("debugMode");
+    if (storedDebugMode === "true" || storedDebugMode === "false") {
+      setIsDebugMode(storedDebugMode === "true");
+    } else {
+      setIsDebugMode(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -381,6 +390,10 @@ function App() {
       isAudioPlaybackEnabled.toString()
     );
   }, [isAudioPlaybackEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem("debugMode", isDebugMode.toString());
+  }, [isDebugMode]);
 
   useEffect(() => {
     if (audioElementRef.current) {
@@ -431,6 +444,9 @@ function App() {
   }, [sessionStatus]);
 
   const agentSetKey = searchParams.get("agentConfig") || "default";
+  const avatarConfig = avatarConfigs[selectedAgentName] ?? {
+    baseImage: defaultBaseImage,
+  };
 
   return (
     <div className="text-base flex flex-col h-screen bg-gray-100 text-gray-800 relative">
@@ -526,7 +542,11 @@ function App() {
           }
         />
 
-        <Events isExpanded={isEventsPaneExpanded} />
+        {isDebugMode ? (
+          <Events isExpanded={isEventsPaneExpanded} />
+        ) : (
+          <Avatar config={avatarConfig} />
+        )}
       </div>
 
       <BottomToolbar
@@ -541,6 +561,8 @@ function App() {
         setIsEventsPaneExpanded={setIsEventsPaneExpanded}
         isAudioPlaybackEnabled={isAudioPlaybackEnabled}
         setIsAudioPlaybackEnabled={setIsAudioPlaybackEnabled}
+        isDebugMode={isDebugMode}
+        setIsDebugMode={setIsDebugMode}
         codec={urlCodec}
         onCodecChange={handleCodecChange}
       />

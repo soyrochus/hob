@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Default avatar">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d1d5db" />
+      <stop offset="100%" stop-color="#9ca3af" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="40" fill="url(#bg)" />
+  <circle cx="256" cy="196" r="96" fill="#f3f4f6" />
+  <path d="M104 434c22-80 84-122 152-122s130 42 152 122" fill="#f3f4f6" />
+  <text x="256" y="484" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#374151">
+    Hob
+  </text>
+</svg>
