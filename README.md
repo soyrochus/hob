@@ -9,6 +9,8 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
+> *Talk. Delegate. Done.*
+
 **Hob** is a voice-first, multi-agent application built on the [OpenAI Realtime API](https://platform.openai.com/docs/guides/realtime). It supports low-latency streaming voice conversations with AI agents that can call tools, hand off between each other, and delegate complex reasoning to higher-intelligence text models — all in real time.
 
 Hob is a fork of [OpenAI's Realtime API Agents Demo](https://github.com/openai/openai-realtime-agents), used under the MIT license and being developed into a new product in the open.
