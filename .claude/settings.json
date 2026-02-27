@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"from PIL import Image; img = Image.open\\(''/Users/ivanderk/src/hob/images/animations.png''\\); print\\(img.size\\)\")",
+      "Bash(identify /Users/ivanderk/src/hob/images/animations.png)",
+      "Bash(sips -g all /Users/ivanderk/src/hob/images/animations.png)",
+      "Bash(sips --help)",
+      "Bash(node -e \"require\\(''sharp''\\)\")",
+      "WebFetch(domain:community.openai.com)",
+      "WebFetch(domain:openai.github.io)"
+    ]
+  }
+}
