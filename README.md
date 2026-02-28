@@ -54,6 +54,20 @@ Hob uses **WebRTC** to stream audio directly between the browser and the OpenAI 
 
 ![Hob screen](images/Hob-screenshot.png)
 
+### Agent vs Scenario
+
+In this repo, these are different things:
+
+| Term | What it is | Example in code |
+| ---- | ---------- | --------------- |
+| **Agent** | One `RealtimeAgent` with a single role: instructions, tools, and allowed handoffs | `chatAgent`, `returnsAgent`, `salesAgent` |
+| **Agent scenario** | A named `RealtimeAgent[]` set that defines the team of agents for one session | `chatSupervisorScenario`, `customerServiceRetailScenario`, `simpleHandoffScenario` |
+
+Put simply:
+
+- An **agent** is one worker.
+- A **scenario** is the full team configuration and entry point you choose from the UI (`?agentConfig=<name>`).
+
 Three demo scenarios are included:
 
 | Scenario | Description |
