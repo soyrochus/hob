@@ -431,6 +431,34 @@ function App() {
   }, [sessionStatus, isAudioPlaybackEnabled]);
 
   useEffect(() => {
+    if (
+      sessionStatus !== "CONNECTED" ||
+      !isAudioPlaybackEnabled ||
+      !audioElementRef.current
+    ) {
+      return;
+    }
+
+    const audioEl = audioElementRef.current;
+    const ensurePlayback = () => {
+      if (!audioEl.srcObject) return;
+      if (!audioEl.paused) return;
+      audioEl.play().catch((err) => {
+        console.warn("Failed to start remote audio playback:", err);
+      });
+    };
+
+    ensurePlayback();
+    audioEl.addEventListener("loadedmetadata", ensurePlayback);
+    audioEl.addEventListener("canplay", ensurePlayback);
+
+    return () => {
+      audioEl.removeEventListener("loadedmetadata", ensurePlayback);
+      audioEl.removeEventListener("canplay", ensurePlayback);
+    };
+  }, [sessionStatus, isAudioPlaybackEnabled]);
+
+  useEffect(() => {
     if (sessionStatus === "CONNECTED" && audioElementRef.current?.srcObject) {
       // The remote audio stream from the audio element.
       const remoteStream = audioElementRef.current.srcObject as MediaStream;
@@ -545,7 +573,7 @@ function App() {
         {isDebugMode ? (
           <Events isExpanded={isEventsPaneExpanded} />
         ) : (
-          <Avatar config={avatarConfig} />
+          <Avatar config={avatarConfig} audioElement={sdkAudioElement} />
         )}
       </div>
 

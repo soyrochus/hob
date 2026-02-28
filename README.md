@@ -52,6 +52,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. Click **Con
 
 Hob uses **WebRTC** to stream audio directly between the browser and the OpenAI Realtime API — the Next.js server is only involved in minting a short-lived session token. Once connected, the conversation is handled by a network of AI agents defined in `src/app/agentConfigs/`.
 
+![Hob screen](images/Hob-screenshot.png)
+
 Three demo scenarios are included:
 
 | Scenario | Description |
