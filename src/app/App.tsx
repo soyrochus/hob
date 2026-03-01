@@ -485,15 +485,15 @@ function App() {
         >
           <div>
             <Image
-              src="/openai-logomark.svg"
-              alt="OpenAI Logo"
-              width={20}
-              height={20}
-              className="mr-2"
+              src="/logo/hob-icon.png"
+              alt="Hob Logo"
+              width={28}
+              height={28}
+              className="mr-2 shrink-0 scale-125 origin-center"
             />
           </div>
           <div>
-            Realtime API <span className="text-gray-500">Agents</span>
+            Hob <span className="text-gray-500">Multi-Agent Assistant</span>
           </div>
         </div>
         <div className="flex items-center">
