@@ -21,6 +21,10 @@ export const defaultOverlayImages: AvatarOverlayImages = {
 export const defaultBaseImage = "/avatars/default-avatar.svg";
 
 export const avatarConfigs: Record<string, AvatarConfig> = {
+  assistant: {
+    baseImage: "/avatars/Hob-small.png",
+    altText: "Default assistant avatar",
+  },
   chatAgent: {
     baseImage: "/avatars/Hob-small.png",
     altText: "Chat agent avatar",

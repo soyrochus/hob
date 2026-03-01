@@ -19,22 +19,46 @@ import type { RealtimeAgent } from '@openai/agents/realtime';
 import { useTranscript } from "@/app/contexts/TranscriptContext";
 import { useEvent } from "@/app/contexts/EventContext";
 import { useRealtimeSession } from "./hooks/useRealtimeSession";
+import type { GuardrailProfile } from "@/app/agentConfigs/guardrails";
 import { createModerationGuardrail } from "@/app/agentConfigs/guardrails";
 
 // Agent configs
 import { allAgentSets, defaultAgentSetKey } from "@/app/agentConfigs";
 import { customerServiceRetailScenario } from "@/app/agentConfigs/customerServiceRetail";
 import { chatSupervisorScenario } from "@/app/agentConfigs/chatSupervisor";
+import { defaultAssistantScenario } from "@/app/agentConfigs/defaultAssistant";
 import { customerServiceRetailCompanyName } from "@/app/agentConfigs/customerServiceRetail";
 import { chatSupervisorCompanyName } from "@/app/agentConfigs/chatSupervisor";
+import { defaultAssistantCompanyName } from "@/app/agentConfigs/defaultAssistant";
 import { simpleHandoffScenario } from "@/app/agentConfigs/simpleHandoff";
 import { avatarConfigs, defaultBaseImage } from "@/app/agentConfigs/avatarConfig";
 
 // Map used by connect logic for scenarios defined via the SDK.
 const sdkScenarioMap: Record<string, RealtimeAgent[]> = {
+  defaultAssistant: defaultAssistantScenario,
   simpleHandoff: simpleHandoffScenario,
   customerServiceRetail: customerServiceRetailScenario,
   chatSupervisor: chatSupervisorScenario,
+};
+
+interface ScenarioGuardrailConfig {
+  companyName: string;
+  profile: GuardrailProfile;
+}
+
+const scenarioGuardrailMap: Record<string, ScenarioGuardrailConfig> = {
+  defaultAssistant: {
+    companyName: defaultAssistantCompanyName,
+    profile: 'general',
+  },
+  customerServiceRetail: {
+    companyName: customerServiceRetailCompanyName,
+    profile: 'company',
+  },
+  chatSupervisor: {
+    companyName: chatSupervisorCompanyName,
+    profile: 'company',
+  },
 };
 
 import useAudioDownload from "./hooks/useAudioDownload";
@@ -220,10 +244,14 @@ function App() {
           reorderedAgents.unshift(agent);
         }
 
-        const companyName = agentSetKey === 'customerServiceRetail'
-          ? customerServiceRetailCompanyName
-          : chatSupervisorCompanyName;
-        const guardrail = createModerationGuardrail(companyName);
+        const guardrailConfig = scenarioGuardrailMap[agentSetKey] ?? {
+          companyName: chatSupervisorCompanyName,
+          profile: 'company' as GuardrailProfile,
+        };
+        const guardrail = createModerationGuardrail(
+          guardrailConfig.companyName,
+          guardrailConfig.profile,
+        );
 
         await connect({
           getEphemeralKey: async () => ephemeralSession,
