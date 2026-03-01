@@ -86,23 +86,58 @@ In this repo, these are different things:
 
 | Term | What it is | Example in code |
 | ---- | ---------- | --------------- |
-| **Agent** | One `RealtimeAgent` with a single role: instructions, tools, and allowed handoffs | `chatAgent`, `returnsAgent`, `salesAgent` |
-| **Agent scenario** | A named `RealtimeAgent[]` set that defines the team of agents for one session | `chatSupervisorScenario`, `customerServiceRetailScenario`, `simpleHandoffScenario` |
+| **Agent** | One `RealtimeAgent` with a single role: instructions, tools, and allowed handoffs | `assistant`, `chatAgent`, `authenticationAgent` |
+| **Agent scenario** | A named `RealtimeAgent[]` set that defines the team used for one session | `defaultAssistantScenario`, `chatSupervisorScenario`, `customerServiceRetailScenario`, `simpleHandoffScenario` |
 
 Put simply:
 
 - An **agent** is one worker.
 - A **scenario** is the full team configuration and entry point you choose from the UI (`?agentConfig=<name>`).
 
-Three demo scenarios are included:
+Four built-in scenarios are currently included:
 
 | Scenario | Description |
 | -------- | ----------- |
-| `chatSupervisor` *(default)* | A fast realtime model handles voice; a smarter text model handles complex queries and tool calls behind the scenes |
-| `customerServiceRetail` | A fully-connected network of four agents for a fictional snowboard retailer — authentication, returns, sales, and human escalation |
-| `simpleHandoff` | Minimal two-agent handoff reference implementation |
+| `defaultAssistant` *(default)* | Production-oriented single-assistant flow with hosted tools (`webSearch`, `codeInterpreter`, optional `fileSearch`) |
+| `chatSupervisor` | Two-layer pattern where a realtime front agent delegates difficult responses/tool use to a stronger supervisor model |
+| `customerServiceRetail` | Multi-agent retail example (authentication, returns, sales, simulated human escalation) |
+| `simpleHandoff` | Minimal two-agent handoff reference for learning and debugging |
 
 Select a scenario from the dropdown in the top bar, or pass `?agentConfig=<name>` as a URL parameter.
+
+### DefaultAssistant
+
+`defaultAssistant` is the current default scenario (`defaultAgentSetKey`), backed by a single `assistant` `RealtimeAgent` defined in `src/app/agentConfigs/defaultAssistant/index.ts`.
+
+Its behavior is intentionally simple:
+
+- General-purpose voice assistant with concise, practical replies
+- Handles lightweight conversation directly
+- Uses tools for facts, recent information, calculations, and code-like tasks
+- Asks follow-up questions when required parameters are missing
+- Does not claim tool usage unless a tool was actually called
+
+### DefaultAssistant Tools (excluding file search)
+
+The `defaultAssistant` tools are implemented in `src/app/agentConfigs/defaultAssistant/hostedTools.ts` using the Agents SDK `tool(...)` helper.
+
+How tool execution works:
+
+1. The realtime assistant decides to call a tool (`webSearch` or `codeInterpreter`) based on user intent.
+2. The tool `execute(...)` handler calls a shared helper (`callResponses`) that `POST`s to `/api/responses`.
+3. `/api/responses` is a server-side proxy that selects OpenAI vs Azure based on env config (`LLM_PROVIDER` + fallback logic).
+4. The proxy calls the Responses API with `parallel_tool_calls: false` and the hosted tool definition for that request.
+5. Tool output text is normalized by `extractOutputText(...)` and returned to the realtime agent as `{ result: "..." }`.
+6. If the API call fails, the tool returns a structured error (for example `web_search_failed` or `code_interpreter_failed`) so the assistant can recover gracefully.
+
+Tool-specific behavior:
+
+- `webSearch` accepts a single `query` string.
+- `webSearch` uses the hosted Responses tool `web_search`.
+- `webSearch` prompts for an accurate, concise answer and asks for source URLs in plain text.
+- `codeInterpreter` accepts a single `task` string.
+- `codeInterpreter` uses the hosted Responses tool `code_interpreter` with `container: { type: "auto" }`.
+- `codeInterpreter` returns concise computed or derived output from the code execution flow.
 
 ### Key Features
 
