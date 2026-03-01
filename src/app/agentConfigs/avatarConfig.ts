@@ -22,8 +22,31 @@ export const defaultBaseImage = "/avatars/default-avatar.svg";
 
 export const avatarConfigs: Record<string, AvatarConfig> = {
   chatAgent: {
-    //baseImage: "/avatars/chat-agent.svg",
     baseImage: "/avatars/Hob-small.png",
     altText: "Chat agent avatar",
+  },
+  greeter: {
+    baseImage: "/avatars/Hob-small.png",
+    altText: "Greeter agent avatar",
+  },
+  haikuWriter: {
+    baseImage: "/avatars/Hob-small.png",
+    altText: "Haiku writer agent avatar",
+  },
+  authentication: {
+    baseImage: "/avatars/Hob-small.png",
+    altText: "Authentication agent avatar",
+  },
+  salesAgent: {
+    baseImage: "/avatars/Hob-small.png",
+    altText: "Sales agent avatar",
+  },
+  returns: {
+    baseImage: "/avatars/Hob-small.png",
+    altText: "Returns agent avatar",
+  },
+  simulatedHuman: {
+    baseImage: "/avatars/Hob-small.png",
+    altText: "Simulated human agent avatar",
   },
 };
