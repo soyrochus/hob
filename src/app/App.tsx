@@ -181,7 +181,9 @@ function App() {
     }
   }, [isPTTActive]);
 
-  const fetchEphemeralKey = async (): Promise<string | null> => {
+  const fetchEphemeralKey = async (): Promise<
+    { key: string; realtimeUrl?: string } | null
+  > => {
     logClientEvent({ url: "/session" }, "fetch_session_token_request");
     const tokenResponse = await fetch("/api/session");
     const data = await tokenResponse.json();
@@ -194,7 +196,10 @@ function App() {
       return null;
     }
 
-    return data.client_secret.value;
+    return {
+      key: data.client_secret.value,
+      realtimeUrl: data.realtimeUrl,
+    };
   };
 
   const connectToRealtime = async () => {
@@ -204,8 +209,8 @@ function App() {
       setSessionStatus("CONNECTING");
 
       try {
-        const EPHEMERAL_KEY = await fetchEphemeralKey();
-        if (!EPHEMERAL_KEY) return;
+        const ephemeralSession = await fetchEphemeralKey();
+        if (!ephemeralSession) return;
 
         // Ensure the selectedAgentName is first so that it becomes the root
         const reorderedAgents = [...sdkScenarioMap[agentSetKey]];
@@ -221,7 +226,7 @@ function App() {
         const guardrail = createModerationGuardrail(companyName);
 
         await connect({
-          getEphemeralKey: async () => EPHEMERAL_KEY,
+          getEphemeralKey: async () => ephemeralSession,
           initialAgents: reorderedAgents,
           audioElement: sdkAudioElement,
           outputGuardrails: [guardrail],

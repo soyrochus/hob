@@ -16,7 +16,7 @@ export interface RealtimeSessionCallbacks {
 }
 
 export interface ConnectOptions {
-  getEphemeralKey: () => Promise<string>;
+  getEphemeralKey: () => Promise<{ key: string; realtimeUrl?: string }>;
   initialAgents: RealtimeAgent[];
   audioElement?: HTMLAudioElement;
   extraContext?: Record<string, any>;
@@ -122,7 +122,7 @@ export function useRealtimeSession(callbacks: RealtimeSessionCallbacks = {}) {
 
       updateStatus('CONNECTING');
 
-      const ek = await getEphemeralKey();
+      const { key, realtimeUrl } = await getEphemeralKey();
       const rootAgent = initialAgents[0];
 
       sessionRef.current = new RealtimeSession(rootAgent, {
@@ -144,7 +144,9 @@ export function useRealtimeSession(callbacks: RealtimeSessionCallbacks = {}) {
         context: extraContext ?? {},
       });
 
-      await sessionRef.current.connect({ apiKey: ek });
+      await sessionRef.current.connect(
+        realtimeUrl ? { apiKey: key, url: realtimeUrl } : { apiKey: key }
+      );
       updateStatus('CONNECTED');
     },
     [callbacks, updateStatus],
