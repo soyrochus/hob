@@ -1,0 +1,3 @@
+[submodule "vendor/openai-agents-js"]
+	path = vendor/openai-agents-js
+	url = https://github.com/openai/openai-agents-js

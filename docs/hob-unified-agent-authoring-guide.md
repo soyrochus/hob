@@ -168,14 +168,34 @@ export const unifiedSupportScenario = [intakeAgent, returnsAgent, salesAgent, hu
 export const unifiedSupportCompanyName = 'YourCompany';
 ```
 
-## 8. Runtime Facts To Keep In Mind
+## 8. OpenAI Agents SDK Source Reference
+
+The full source code of the OpenAI Agents SDK (JavaScript/TypeScript) is available locally as a git submodule at `vendor/openai-agents-js`. This is the same SDK that provides `@openai/agents` and `@openai/agents/realtime` used throughout Hob.
+
+When authoring agents, consult this source to determine:
+
+- Available options for `RealtimeAgent`, `RealtimeSession`, and `OpenAIRealtimeWebRTC` constructors
+- Supported parameters for `session.connect()` (e.g. `apiKey`, `url`)
+- Tool definition schemas and execution interfaces
+- Handoff mechanics and event types (`agent_handoff`, `agent_tool_start`, `agent_tool_end`, etc.)
+- Guardrail interfaces and how `outputGuardrails` are evaluated
+
+Key entry points in the SDK source:
+
+| What | Path in `vendor/openai-agents-js` |
+| --- | --- |
+| Realtime agents | `packages/agents-realtime/src/` |
+| Core agent framework | `packages/agents-core/src/` |
+| OpenAI provider | `packages/agents-openai/src/` |
+
+## 9. Runtime Facts To Keep In Mind
 
 - Realtime session key is minted in `src/app/api/session/route.ts`.
 - Text-model reasoning and structured parsing run through `src/app/api/responses/route.ts`.
 - Realtime tool execution for SDK agents happens in the client runtime (tool `execute` functions).
 - Session wiring, guardrails, and handoff UI sync happen in `src/app/App.tsx` and `src/app/hooks/useRealtimeSession.ts`.
 
-## 9. Practical Quality Checklist
+## 10. Practical Quality Checklist
 
 Before shipping a new unified agent scenario:
 
@@ -186,6 +206,6 @@ Before shipping a new unified agent scenario:
 5. Tool call arguments/results are visible as breadcrumbs for debugging.
 6. Scenario is selectable via `?agentConfig=<yourKey>`.
 
-## 10. Suggested Next Implementation
+## 11. Suggested Next Implementation
 
 If you want this fully wired immediately, implement `unifiedSupport` as a fourth scenario under `src/app/agentConfigs/` using the structure above, then register it in `allAgentSets` and `sdkScenarioMap`.
