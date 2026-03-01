@@ -22,7 +22,7 @@ Hob is a fork of [OpenAI's Realtime API Agents Demo](https://github.com/openai/o
 ### Prerequisites
 
 - Node.js 18+
-- An [OpenAI API key](https://platform.openai.com/api-keys) with Realtime API access
+- An [OpenAI API key](https://platform.openai.com/api-keys) with Realtime API access, **or** an [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/) resource with Realtime API enabled
 
 ### Installation
 
@@ -32,11 +32,37 @@ npm install
 
 ### Configuration
 
-Create a `.env` file in the project root:
+Copy the sample env file and fill in your credentials:
+
+```bash
+cp .env.sample .env.local
+```
+
+#### Direct OpenAI (default)
 
 ```env
 OPENAI_API_KEY=sk-...
 ```
+
+#### Azure OpenAI
+
+```env
+LLM_PROVIDER=azure
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
+AZURE_OPENAI_API_KEY=your-azure-api-key
+AZURE_OPENAI_API_VERSION=2025-04-01-preview
+AZURE_OPENAI_REALTIME_DEPLOYMENT=gpt-4o-realtime-preview
+AZURE_OPENAI_RESPONSES_DEPLOYMENT=gpt-4.1
+AZURE_OPENAI_MINI_DEPLOYMENT=gpt-4o-mini
+```
+
+#### Provider selection
+
+The app uses a three-tier strategy to determine which provider to use:
+
+1. **Explicit** — set `LLM_PROVIDER` to `openai` or `azure` to force a provider (useful when both sets of credentials are present)
+2. **Auto-detect** — if `LLM_PROVIDER` is unset, the app checks for `OPENAI_API_KEY` first, then `AZURE_OPENAI_ENDPOINT`
+3. **Fail** — if no provider can be resolved, the app throws a startup error
 
 ### Running
 
