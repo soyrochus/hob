@@ -98,7 +98,12 @@ export const codeInterpreter = tool({
     const response = await callResponses({
       model: RESPONSES_MODEL,
       input: `Use code interpreter when helpful to solve this task. Return a concise final answer.\n\nTask: ${task}`,
-      tools: [{ type: 'code_interpreter' }],
+      tools: [
+        {
+          type: 'code_interpreter',
+          container: { type: 'auto' },
+        },
+      ],
     });
 
     if ((response as any)?.error) {
