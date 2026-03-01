@@ -16,7 +16,7 @@ Use these terms consistently when designing new configs:
 
 | Term | Meaning in Hob | Shape |
 | --- | --- | --- |
-| **Agent** | One specialized runtime role with its own prompt, tools, and handoff options | `new RealtimeAgent({...})` |
+| **Agent** | One specialized runtime role with its own prompt, tools, voice, and handoff options | `new RealtimeAgent({...})` |
 | **Agent scenario** | A named group of agents used as one selectable session configuration | `RealtimeAgent[]` |
 
 Concrete examples from this repo:
@@ -79,11 +79,24 @@ Recommended files:
 
 Use `new RealtimeAgent({...})` and `tool({...})` exactly like existing configs.
 
+`RealtimeAgent` constructor accepts:
+
+| Option | Type | Notes |
+| --- | --- | --- |
+| `name` | `string` | **Required** — unique identifier for the agent |
+| `instructions` | `string \| ((ctx) => string)` | System prompt |
+| `handoffs` | `(RealtimeAgent \| Handoff)[]` | Agents this agent can transfer to |
+| `tools` | `Tool[]` | Tools available to this agent |
+| `voice` | `string` | Voice for this agent (e.g. `'alloy'`, `'shimmer'`) |
+
+**SDK constraint**: `RealtimeAgent` does **not** accept `model`, `modelSettings`, `outputGuardrails`, or `inputGuardrails`. All agents in a session share the same model (set on `RealtimeSession`) and the same output guardrails (set via `RealtimeSessionOptions.outputGuardrails`).
+
 Rules from current codebase:
 
 - Keep tool schemas strict (`required`, `additionalProperties: false`).
 - Keep tool logic deterministic where possible.
 - For tool observability, use `details?.context` + `addTranscriptBreadcrumb` (see supervisor pattern).
+- Set `voice` per agent if different agents should sound different (e.g. a human-escalation agent could use a distinct voice).
 
 ### Step 2: Add a validation tool/agent for high-risk actions
 
@@ -113,7 +126,7 @@ Key behaviors to preserve:
 
 - Include recent conversation history in the request body.
 - Allow iterative function-call loops until final text is produced.
-- Force `parallel_tool_calls: false` if tool order matters.
+- Force `parallel_tool_calls: false` in the Responses API request body if tool order matters. Note: this is a `ModelSettings` property for text-model calls only — it cannot be set on `RealtimeAgent` (which omits `modelSettings`).
 - Return one final message that the realtime agent can speak verbatim.
 
 ### Step 4: Compose handoffs in one place
@@ -144,6 +157,8 @@ There are two distinct safety layers and both should be kept:
 - Implemented by `createModerationGuardrail(companyName)` in `guardrails.ts`.
 - Passed to session as `outputGuardrails` in `App.tsx`.
 - Processed in history hook via `guardrail_tripped` event.
+
+**SDK constraint**: Output guardrails are set at the **session level** (`RealtimeSessionOptions.outputGuardrails`), not per agent. All agents in a session share the same guardrails. The guardrail interface requires a `name` and a `run()` function returning an `OutputGuardrailResult`. An optional `debounceTextLength` setting (default 100) controls how much text accumulates before the guardrail is invoked.
 
 These layers solve different problems:
 
@@ -177,23 +192,78 @@ When authoring agents, consult this source to determine:
 - Available options for `RealtimeAgent`, `RealtimeSession`, and `OpenAIRealtimeWebRTC` constructors
 - Supported parameters for `session.connect()` (e.g. `apiKey`, `url`)
 - Tool definition schemas and execution interfaces
-- Handoff mechanics and event types (`agent_handoff`, `agent_tool_start`, `agent_tool_end`, etc.)
+- Handoff mechanics and event types
 - Guardrail interfaces and how `outputGuardrails` are evaluated
 
 Key entry points in the SDK source:
 
 | What | Path in `vendor/openai-agents-js` |
 | --- | --- |
-| Realtime agents | `packages/agents-realtime/src/` |
+| Main re-export (`@openai/agents`) | `packages/agents/src/` |
+| Realtime agents (`@openai/agents/realtime`) | `packages/agents-realtime/src/` |
 | Core agent framework | `packages/agents-core/src/` |
 | OpenAI provider | `packages/agents-openai/src/` |
 
+### Key SDK types for Hob development
+
+**`RealtimeSessionOptions`** (set when constructing `RealtimeSession`):
+
+| Option | Type | Notes |
+| --- | --- | --- |
+| `transport` | `'webrtc' \| 'websocket' \| RealtimeTransportLayer` | Hob uses `OpenAIRealtimeWebRTC` |
+| `model` | `string` | Shared across all agents in the session |
+| `outputGuardrails` | `RealtimeOutputGuardrail[]` | Session-level, not per-agent |
+| `outputGuardrailSettings` | `{ debounceTextLength: number }` | Default: 100 chars |
+| `config` | `Partial<RealtimeSessionConfig>` | Input audio transcription, etc. |
+| `context` | `TContext` | Shared context passed to tools |
+| `historyStoreAudio` | `boolean` | Whether to store audio in history |
+| `tracingDisabled` | `boolean` | Disable tracing |
+
+**`session.connect()` options**:
+
+| Option | Type | Notes |
+| --- | --- | --- |
+| `apiKey` | `string \| (() => string \| Promise<string>)` | **Required** |
+| `url` | `string` | Custom endpoint (used for Azure WebRTC) |
+| `model` | `string` | Override model at connect time |
+| `callId` | `string` | For SIP transport |
+
+**`OpenAIRealtimeWebRTC` constructor options**:
+
+| Option | Type | Notes |
+| --- | --- | --- |
+| `audioElement` | `HTMLAudioElement` | For playback |
+| `mediaStream` | `MediaStream` | Custom input stream |
+| `baseUrl` | `string` | Custom base URL |
+| `changePeerConnection` | `(pc) => pc` | Modify RTCPeerConnection (used for codec selection) |
+
+**RealtimeSession events** (subscribe via `session.on(event, handler)`):
+
+| Event | Payload | When |
+| --- | --- | --- |
+| `agent_start` | context, agent | Agent begins processing |
+| `agent_end` | context, agent, output | Agent finishes |
+| `agent_handoff` | context, fromAgent, toAgent | Control transfers |
+| `agent_tool_start` | context, agent, tool, details | Tool invocation begins |
+| `agent_tool_end` | context, agent, tool, result, details | Tool invocation completes |
+| `transport_event` | event | Raw transport-level event |
+| `audio_start` | context, agent | Audio generation begins |
+| `audio_stopped` | context, agent | Audio generation stops |
+| `audio_interrupted` | context, agent | User interrupted audio |
+| `guardrail_tripped` | context, agent, error, details | Output guardrail triggered |
+| `history_updated` | history | Conversation history changed |
+| `history_added` | item | New item added to history |
+| `error` | error | Session error |
+| `tool_approval_requested` | context, agent, request | Tool needs user approval |
+
 ## 9. Runtime Facts To Keep In Mind
 
-- Realtime session key is minted in `src/app/api/session/route.ts`.
-- Text-model reasoning and structured parsing run through `src/app/api/responses/route.ts`.
+- Realtime session key is minted in `src/app/api/session/route.ts`. In Azure mode, the route also returns a `realtimeUrl` for the WebRTC endpoint.
+- Text-model reasoning and structured parsing run through `src/app/api/responses/route.ts`. In Azure mode, `AzureOpenAI` is used and `body.model` is rewritten to the deployment name.
+- Provider selection uses `resolveProvider()` from `src/app/lib/resolveProvider.ts` — see `LLM_PROVIDER` env var or auto-detection via `OPENAI_API_KEY` / `AZURE_OPENAI_ENDPOINT`.
 - Realtime tool execution for SDK agents happens in the client runtime (tool `execute` functions).
 - Session wiring, guardrails, and handoff UI sync happen in `src/app/App.tsx` and `src/app/hooks/useRealtimeSession.ts`.
+- All agents in a `RealtimeSession` share the same model, guardrails, and context. Per-agent differentiation is limited to `name`, `instructions`, `tools`, `handoffs`, and `voice`.
 
 ## 10. Practical Quality Checklist
 
