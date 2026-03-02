@@ -24,6 +24,10 @@ export interface ConnectOptions {
 }
 
 export function useRealtimeSession(callbacks: RealtimeSessionCallbacks = {}) {
+  const realtimeModel = 'gpt-realtime-2025-08-28';
+  const openAiWebRtcUrl = `https://api.openai.com/v1/realtime?model=${encodeURIComponent(
+    realtimeModel,
+  )}`;
   const sessionRef = useRef<RealtimeSession | null>(null);
   const [status, setStatus] = useState<
     SessionStatus
@@ -43,19 +47,118 @@ export function useRealtimeSession(callbacks: RealtimeSessionCallbacks = {}) {
 
   const historyHandlers = useHandleSessionHistory().current;
 
+  const normalizeWebRtcUrl = (url: string) => {
+    const normalized = new URL(url);
+    if (normalized.protocol === "ws:") normalized.protocol = "http:";
+    if (normalized.protocol === "wss:") normalized.protocol = "https:";
+    return normalized.toString();
+  };
+
+  const normalizeLegacyMessageItem = (item: any) => {
+    if (!item || item.type !== "message") return item;
+    const role = item.role;
+    const content = Array.isArray(item.content)
+      ? item.content.map((c: any) => {
+          if (!c || typeof c !== "object") return c;
+          if (c.type !== "audio") return c;
+          return {
+            ...c,
+            type: role === "assistant" ? "output_audio" : "input_audio",
+          };
+        })
+      : [];
+
+    return {
+      itemId: item.itemId ?? item.id,
+      previousItemId: item.previousItemId ?? item.previous_item_id,
+      type: item.type,
+      role,
+      status: item.status,
+      content,
+    };
+  };
+
+  const buildLegacyFunctionTools = (agent: RealtimeAgent) => {
+    const rawTools = ((agent as any)?.tools ?? []) as any[];
+    return rawTools
+      .map((tool) => {
+        if (!tool || typeof tool !== "object") return null;
+        const type = tool.type ?? "function";
+        if (type !== "function") return null;
+        if (!tool.name) return null;
+        return {
+          type: "function",
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.parameters,
+        };
+      })
+      .filter(Boolean);
+  };
+
   function handleTransportEvent(event: any) {
     // Handle additional server events that aren't managed by the session
     switch (event.type) {
+      case "conversation.item.created": {
+        const normalizedItem = normalizeLegacyMessageItem(event.item);
+        if (normalizedItem?.type === "message") {
+          historyHandlers.handleHistoryAdded(normalizedItem);
+        }
+        break;
+      }
+      case "response.output_item.added": {
+        const normalizedItem = normalizeLegacyMessageItem(event.item);
+        if (normalizedItem?.type === "message") {
+          historyHandlers.handleHistoryAdded(normalizedItem);
+        }
+        if (event.item?.type === "function_call") {
+          const tool = { name: event.item.name };
+          const details = { toolCall: { arguments: event.item.arguments } };
+          historyHandlers.handleAgentToolStart(undefined, undefined, tool, details);
+        }
+        break;
+      }
+      case "response.output_item.done": {
+        const normalizedItem = normalizeLegacyMessageItem(event.item);
+        if (normalizedItem?.type === "message") {
+          historyHandlers.handleHistoryUpdated([normalizedItem]);
+        }
+        if (event.item?.type === "function_call") {
+          const tool = { name: event.item.name };
+          const details = { toolCall: { arguments: event.item.arguments } };
+          historyHandlers.handleAgentToolStart(undefined, undefined, tool, details);
+          historyHandlers.handleAgentToolEnd(
+            undefined,
+            undefined,
+            tool,
+            event.item.output,
+            details,
+          );
+        }
+        break;
+      }
       case "conversation.item.input_audio_transcription.completed": {
         historyHandlers.handleTranscriptionCompleted(event);
         break;
       }
+      case "response.output_audio_transcript.done":
       case "response.audio_transcript.done": {
         historyHandlers.handleTranscriptionCompleted(event);
         break;
       }
+      case "response.output_audio_transcript.delta":
       case "response.audio_transcript.delta": {
         historyHandlers.handleTranscriptionDelta(event);
+        break;
+      }
+      case "response.content_part.done": {
+        const transcript = event.part?.transcript;
+        if (event.item_id && transcript) {
+          historyHandlers.handleTranscriptionCompleted({
+            item_id: event.item_id,
+            transcript,
+          });
+        }
         break;
       }
       default: {
@@ -80,11 +183,11 @@ export function useRealtimeSession(callbacks: RealtimeSessionCallbacks = {}) {
     [],
   );
 
-  const handleAgentHandoff = (item: any) => {
-    const history = item.context.history;
-    const lastMessage = history[history.length - 1];
-    const agentName = lastMessage.name.split("transfer_to_")[1];
-    callbacks.onAgentHandoff?.(agentName);
+  const handleAgentHandoff = (_context: any, _fromAgent: any, toAgent: any) => {
+    const agentName = toAgent?.name;
+    if (agentName) {
+      callbacks.onAgentHandoff?.(agentName);
+    }
   };
 
   useEffect(() => {
@@ -128,13 +231,16 @@ export function useRealtimeSession(callbacks: RealtimeSessionCallbacks = {}) {
       sessionRef.current = new RealtimeSession(rootAgent, {
         transport: new OpenAIRealtimeWebRTC({
           audioElement,
+          // For OpenAI provider, use the WebRTC SDP endpoint directly.
+          // Azure can still override this by passing `connect({ url })`.
+          baseUrl: openAiWebRtcUrl,
           // Set preferred codec before offer creation
           changePeerConnection: async (pc: RTCPeerConnection) => {
             applyCodec(pc);
             return pc;
           },
         }),
-        model: 'gpt-4o-realtime-preview-2025-06-03',
+        model: realtimeModel,
         config: {
           inputAudioTranscription: {
             model: 'gpt-4o-mini-transcribe',
@@ -145,8 +251,39 @@ export function useRealtimeSession(callbacks: RealtimeSessionCallbacks = {}) {
       });
 
       await sessionRef.current.connect(
-        realtimeUrl ? { apiKey: key, url: realtimeUrl } : { apiKey: key }
+        realtimeUrl
+          ? { apiKey: key, url: normalizeWebRtcUrl(realtimeUrl) }
+          : { apiKey: key }
       );
+
+      // Legacy protocol compatibility: ensure instructions/tools/transcription are
+      // explicitly applied even when session.update behavior differs across model versions.
+      try {
+        const legacyFunctionTools = buildLegacyFunctionTools(rootAgent);
+        sessionRef.current.transport.sendEvent({
+          type: "session.update",
+          session: {
+            modalities: ["audio", "text"],
+            instructions: (rootAgent as any)?.instructions,
+            tool_choice: "auto",
+            tools: legacyFunctionTools,
+            input_audio_transcription: {
+              model: "gpt-4o-mini-transcribe",
+            },
+            turn_detection: {
+              type: "server_vad",
+              create_response: true,
+              interrupt_response: true,
+            },
+          },
+        } as any);
+      } catch (error) {
+        logServerEvent({
+          type: "legacy_session_update_error",
+          error,
+        });
+      }
+
       updateStatus('CONNECTED');
     },
     [callbacks, updateStatus],

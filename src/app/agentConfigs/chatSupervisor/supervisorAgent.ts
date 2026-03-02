@@ -162,7 +162,7 @@ async function fetchResponsesMessage(body: any) {
     return { error: 'Something went wrong.' };
   }
 
-  const completion = await response.json();
+  const completion: any = await response.json();
   return completion;
 }
 

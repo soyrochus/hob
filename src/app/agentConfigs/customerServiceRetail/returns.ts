@@ -291,7 +291,8 @@ true/false/need_more_information
           return { error: "Something went wrong." };
         }
 
-        const { output = [] } = await response.json();
+        const responseBody = (await response.json()) as { output?: any[] };
+        const output = responseBody.output ?? [];
         const text = output
           .find((i: any) => i.type === 'message' && i.role === 'assistant')
           ?.content?.find((c: any) => c.type === 'output_text')?.text ?? '';

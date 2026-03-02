@@ -1,4 +1,5 @@
 import { zodTextFormat } from 'openai/helpers/zod';
+import type { RealtimeOutputGuardrail } from '@openai/agents/realtime';
 import { GuardrailOutputZod, GuardrailOutput } from '@/app/types';
 
 export type GuardrailProfile = 'company' | 'general';
@@ -128,7 +129,7 @@ export async function runGuardrailClassifier(
     return Promise.reject('Error with runGuardrailClassifier.');
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as Record<string, any>;
 
   try {
     const output = GuardrailOutputZod.parse(data.output_parsed);
@@ -140,17 +141,6 @@ export async function runGuardrailClassifier(
     console.error('Error parsing the message content as GuardrailOutput:', error);
     return Promise.reject('Failed to parse guardrail output.');
   }
-}
-
-export interface RealtimeOutputGuardrailResult {
-  tripwireTriggered: boolean;
-  outputInfo: any;
-}
-
-export interface RealtimeOutputGuardrailArgs {
-  agentOutput: string;
-  agent?: any;
-  context?: any;
 }
 
 function isTripwireTriggered(category: string, profile: GuardrailProfile) {
@@ -168,12 +158,14 @@ export function createModerationGuardrail(
   companyName: string,
   profile: GuardrailProfile = 'company',
 ) {
-  return {
+  const guardrail: RealtimeOutputGuardrail = {
     name: 'moderation_guardrail',
 
-    async execute({ agentOutput }: RealtimeOutputGuardrailArgs): Promise<RealtimeOutputGuardrailResult> {
+    async execute({ agentOutput }) {
+      const outputText =
+        typeof agentOutput === 'string' ? agentOutput : JSON.stringify(agentOutput ?? '');
       try {
-        const res = await runGuardrailClassifier(agentOutput, { companyName, profile });
+        const res = await runGuardrailClassifier(outputText, { companyName, profile });
         const triggered = isTripwireTriggered(res.moderationCategory, profile);
         return {
           tripwireTriggered: triggered,
@@ -186,5 +178,7 @@ export function createModerationGuardrail(
         };
       }
     },
-  } as const;
+  };
+
+  return guardrail;
 }

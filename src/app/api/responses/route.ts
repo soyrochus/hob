@@ -28,7 +28,7 @@ function buildClient(): ResponsesClient {
 
 // Proxy endpoint for the OpenAI Responses API
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const body = (await req.json()) as Record<string, any>;
   const provider = resolveProvider();
 
   if (provider === 'azure' && body.model) {

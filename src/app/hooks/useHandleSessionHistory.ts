@@ -24,16 +24,14 @@ export function useHandleSessionHistory() {
       .map((c) => {
         if (!c || typeof c !== "object") return "";
         if (c.type === "input_text") return c.text ?? "";
-        if (c.type === "audio") return c.transcript ?? "";
+        if (c.type === "output_text") return c.text ?? "";
+        if (c.type === "input_audio") return c.transcript ?? "";
+        if (c.type === "output_audio") return c.transcript ?? "";
+        if (c.type === "audio") return c.transcript ?? c.text ?? "";
         return "";
       })
       .filter(Boolean)
       .join("\n");
-  };
-
-  const extractFunctionCallByName = (name: string, content: any[] = []): any => {
-    if (!Array.isArray(content)) return undefined;
-    return content.find((c: any) => c.type === 'function_call' && c.name === name);
   };
 
   const maybeParseJson = (val: any) => {
@@ -48,39 +46,27 @@ export function useHandleSessionHistory() {
     return val;
   };
 
-  const extractLastAssistantMessage = (history: any[] = []): any => {
-    if (!Array.isArray(history)) return undefined;
-    return history.reverse().find((c: any) => c.type === 'message' && c.role === 'assistant');
+  const extractGuardrailOutputInfo = (error: any) => {
+    return error?.result?.output?.outputInfo;
   };
 
-  const extractModeration = (obj: any) => {
-    if ('moderationCategory' in obj) return obj;
-    if ('outputInfo' in obj) return extractModeration(obj.outputInfo);
-    if ('output' in obj) return extractModeration(obj.output);
-    if ('result' in obj) return extractModeration(obj.result);
-  };
-
-  // Temporary helper until the guardrail_tripped event includes the itemId in the next version of the SDK
   const sketchilyDetectGuardrailMessage = (text: string) => {
     return text.match(/Failure Details: (\{.*?\})/)?.[1];
   };
 
   /* ----------------------- event handlers ------------------------- */
 
-  function handleAgentToolStart(details: any, _agent: any, functionCall: any) {
-    const lastFunctionCall = extractFunctionCallByName(functionCall.name, details?.context?.history);
-    const function_name = lastFunctionCall?.name;
-    const function_args = lastFunctionCall?.arguments;
-
+  function handleAgentToolStart(_context: any, _agent: any, tool: any, details: any) {
+    const functionName = tool?.name ?? "";
+    const functionArgs = maybeParseJson(details?.toolCall?.arguments);
     addTranscriptBreadcrumb(
-      `function call: ${function_name}`,
-      function_args
+      `function call: ${functionName}`,
+      functionArgs
     );    
   }
-  function handleAgentToolEnd(details: any, _agent: any, _functionCall: any, result: any) {
-    const lastFunctionCall = extractFunctionCallByName(_functionCall.name, details?.context?.history);
+  function handleAgentToolEnd(_context: any, _agent: any, tool: any, result: any, _details: any) {
     addTranscriptBreadcrumb(
-      `function call result: ${lastFunctionCall?.name}`,
+      `function call result: ${tool?.name ?? ""}`,
       maybeParseJson(result)
     );
   }
@@ -110,16 +96,21 @@ export function useHandleSessionHistory() {
     }
   }
 
-  function handleHistoryUpdated(items: any[]) {
-    console.log("[handleHistoryUpdated] ", items);
-    items.forEach((item: any) => {
+  function handleHistoryUpdated(history: any[]) {
+    console.log("[handleHistoryUpdated] ", history);
+    history.forEach((item: any) => {
       if (!item || item.type !== 'message') return;
 
       const { itemId, content = [] } = item;
+      const existingMessage = transcriptItems.find(
+        (transcriptItem) => transcriptItem.itemId === itemId && transcriptItem.type === "MESSAGE"
+      );
+      if (!existingMessage) return;
+      if (existingMessage.status === "DONE") return;
 
       const text = extractMessageText(content);
 
-      if (text) {
+      if (text && text !== existingMessage.title) {
         updateTranscriptMessage(itemId, text, false);
       }
     });
@@ -129,6 +120,10 @@ export function useHandleSessionHistory() {
     const itemId = item.item_id;
     const deltaText = item.delta || "";
     if (itemId) {
+      const transcriptItem = transcriptItems.find((i) => i.itemId === itemId);
+      if (!transcriptItem) {
+        addTranscriptMessage(itemId, "user", "[Transcribing...]");
+      }
       updateTranscriptMessage(itemId, deltaText, true);
     }
   }
@@ -142,6 +137,10 @@ export function useHandleSessionHistory() {
         ? "[inaudible]"
         : item.transcript;
     if (itemId) {
+      const existing = transcriptItems.find((i) => i.itemId === itemId);
+      if (!existing) {
+        addTranscriptMessage(itemId, "user", finalTranscript);
+      }
       updateTranscriptMessage(itemId, finalTranscript, false);
       // Use the ref to get the latest transcriptItems
       const transcriptItem = transcriptItems.find((i) => i.itemId === itemId);
@@ -160,28 +159,28 @@ export function useHandleSessionHistory() {
     }
   }
 
-  function handleGuardrailTripped(details: any, _agent: any, guardrail: any) {
-    console.log("[guardrail tripped]", details, _agent, guardrail);
-    const moderation = extractModeration(guardrail.result.output.outputInfo);
+  function handleGuardrailTripped(_context: any, _agent: any, error: any, details: any) {
+    console.log("[guardrail tripped]", _context, _agent, error, details);
+    const moderation = extractGuardrailOutputInfo(error);
     logServerEvent({ type: 'guardrail_tripped', payload: moderation });
 
-    // find the last assistant message in details.context.history
-    const lastAssistant = extractLastAssistantMessage(details?.context?.history);
-
-    if (lastAssistant && moderation) {
-      const category = moderation.moderationCategory ?? 'NONE';
-      const rationale = moderation.moderationRationale ?? '';
-      const offendingText: string | undefined = moderation?.testText;
-
-      updateTranscriptItem(lastAssistant.itemId, {
-        guardrailResult: {
-          status: 'DONE',
-          category,
-          rationale,
-          testText: offendingText,
-        },
-      });
+    const itemId = details?.itemId;
+    if (!itemId || !moderation || typeof moderation !== "object") {
+      return;
     }
+
+    const category = moderation.moderationCategory ?? 'NONE';
+    const rationale = moderation.moderationRationale ?? '';
+    const offendingText: string | undefined = moderation?.testText;
+
+    updateTranscriptItem(itemId, {
+      guardrailResult: {
+        status: 'DONE',
+        category,
+        rationale,
+        testText: offendingText,
+      },
+    });
   }
 
   const handlersRef = useRef({

@@ -46,6 +46,14 @@ interface ScenarioGuardrailConfig {
   profile: GuardrailProfile;
 }
 
+interface SessionTokenResponse {
+  client_secret?: {
+    value?: string;
+  };
+  realtimeUrl?: string;
+  [key: string]: any;
+}
+
 const scenarioGuardrailMap: Record<string, ScenarioGuardrailConfig> = {
   defaultAssistant: {
     companyName: defaultAssistantCompanyName,
@@ -210,7 +218,7 @@ function App() {
   > => {
     logClientEvent({ url: "/session" }, "fetch_session_token_request");
     const tokenResponse = await fetch("/api/session");
-    const data = await tokenResponse.json();
+    const data = (await tokenResponse.json()) as SessionTokenResponse;
     logServerEvent(data, "fetch_session_token_response");
 
     if (!data.client_secret?.value) {

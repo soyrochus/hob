@@ -9,11 +9,18 @@ function requireEnv(name: string): string {
   return value;
 }
 
-function buildAzureRealtimeUrl(endpoint: string, deployment: string): string {
+function buildAzureRealtimeUrl(
+  endpoint: string,
+  deployment: string,
+  apiVersion: string,
+): string {
   const realtimeUrl = new URL(endpoint);
-  realtimeUrl.protocol = realtimeUrl.protocol === "http:" ? "ws:" : "wss:";
-  realtimeUrl.pathname = "/openai/v1/realtime";
-  realtimeUrl.search = new URLSearchParams({ model: deployment }).toString();
+  realtimeUrl.protocol = realtimeUrl.protocol === "http:" ? "http:" : "https:";
+  realtimeUrl.pathname = "/openai/v1/realtime/calls";
+  realtimeUrl.search = new URLSearchParams({
+    model: deployment,
+    "api-version": apiVersion,
+  }).toString();
   return realtimeUrl.toString();
 }
 
@@ -23,7 +30,7 @@ export async function GET() {
     const isAzure = provider === "azure";
 
     const openAiSessionUrl = "https://api.openai.com/v1/realtime/sessions";
-    const openAiModel = "gpt-4o-realtime-preview-2025-06-03";
+    const openAiModel = "gpt-realtime-2025-08-28";
 
     const azureEndpoint = isAzure ? requireEnv("AZURE_OPENAI_ENDPOINT") : "";
     const azureApiVersion = isAzure
@@ -58,16 +65,20 @@ export async function GET() {
       headers,
       body: JSON.stringify({
         model: isAzure ? azureRealtimeDeployment : openAiModel,
+        input_audio_transcription: {
+          model: "gpt-4o-mini-transcribe",
+        },
       }),
     });
 
-    const data = await response.json();
+    const data = (await response.json()) as Record<string, any>;
     const responseBody = isAzure
       ? {
           ...data,
           realtimeUrl: buildAzureRealtimeUrl(
             azureEndpoint,
-            azureRealtimeDeployment
+            azureRealtimeDeployment,
+            azureApiVersion
           ),
         }
       : data;
